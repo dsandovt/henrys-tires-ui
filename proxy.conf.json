@@ -1,6 +1,6 @@
 {
   "/api": {
-    "target": "http://localhost:5099",
+    "target": "https://henrys-tires-api-production.up.railway.app",
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"
