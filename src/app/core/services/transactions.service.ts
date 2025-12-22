@@ -8,12 +8,13 @@ import {
   CreateAdjustTransactionRequest
 } from '../models/inventory.models';
 import { PaginatedResponse, PaginationParams } from '../models/api.models';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TransactionsService {
-  private readonly API_URL = '/api/v1/transactions';
+  private readonly API_URL = `${environment.apiUrl}/v1/transactions`;
 
   constructor(private http: HttpClient) {}
 

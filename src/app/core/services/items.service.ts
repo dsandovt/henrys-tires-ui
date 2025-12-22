@@ -3,12 +3,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { Item, CreateItemRequest, UpdateItemRequest } from '../models/inventory.models';
 import { PaginatedResponse, PaginationParams } from '../models/api.models';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ItemsService {
-  private readonly API_URL = '/api/v1/items';
+  private readonly API_URL = `${environment.apiUrl}/v1/items`;
 
   constructor(private http: HttpClient) {}
 
