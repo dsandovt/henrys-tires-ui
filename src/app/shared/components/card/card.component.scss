@@ -1,0 +1,34 @@
+@import 'assets/styles/variables';
+
+.card {
+  background-color: $card-bg;
+  border: $border-width solid $card-border-color;
+  border-radius: $card-border-radius;
+  box-shadow: $card-shadow;
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-4 $card-padding;
+  border-bottom: $border-width solid $card-border-color;
+}
+
+.card-title {
+  margin: 0;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-gray-900;
+}
+
+.card-body {
+  padding: $card-padding;
+}
+
+.card-footer {
+  padding: $spacing-4 $card-padding;
+  border-top: $border-width solid $card-border-color;
+  background-color: $color-gray-50;
+}

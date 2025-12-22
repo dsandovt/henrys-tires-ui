@@ -1,0 +1,244 @@
+@import 'assets/styles/variables';
+
+.stock-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-6;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-4;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-4;
+  width: 100%;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: $spacing-2;
+}
+
+.filter-label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-gray-700;
+  white-space: nowrap;
+}
+
+.branch-filter {
+  padding: 0.5rem 0.75rem;
+  font-size: $font-size-sm;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background-color: white;
+  color: #111827;
+  min-width: 200px;
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+}
+
+.action-buttons {
+  display: flex;
+  gap: $spacing-3;
+  margin-left: auto;
+}
+
+.general-stock-summary {
+  padding: $spacing-4;
+  margin-bottom: $spacing-4;
+  border-bottom: 2px solid #e5e7eb;
+
+  h3 {
+    margin: 0 0 $spacing-3 0;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-gray-900;
+  }
+
+  .stock-totals {
+    display: flex;
+    gap: $spacing-6;
+    flex-wrap: wrap;
+  }
+
+  .stock-item {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-1;
+
+    &.total {
+      margin-left: auto;
+      padding-left: $spacing-6;
+      border-left: 2px solid #e5e7eb;
+
+      .value {
+        font-size: $font-size-2xl;
+        font-weight: $font-weight-bold;
+        color: $color-primary-600;
+      }
+    }
+
+    .label {
+      font-size: $font-size-sm;
+      font-weight: $font-weight-medium;
+      color: $color-gray-600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .value {
+      font-size: $font-size-xl;
+      font-weight: $font-weight-semibold;
+      color: $color-gray-900;
+
+      &.new-badge {
+        color: #166534;
+      }
+
+      &.used-badge {
+        color: #92400e;
+      }
+    }
+  }
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-3;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: $spacing-4;
+  border-top: $border-width solid $border-color-light;
+  margin-top: $spacing-4;
+}
+
+.pagination-info {
+  margin: 0;
+  font-size: $font-size-sm;
+  color: $color-gray-600;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: $spacing-3;
+}
+
+.page-number {
+  font-size: $font-size-sm;
+  color: $color-gray-700;
+  font-weight: $font-weight-medium;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.stock-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: $font-size-base;
+
+  thead {
+    background-color: #f9fafb;
+    border-bottom: 2px solid #e5e7eb;
+
+    th {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-size: $font-size-sm;
+      font-weight: $font-weight-semibold;
+      color: $color-gray-700;
+      white-space: nowrap;
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid #e5e7eb;
+      transition: background-color 0.15s ease;
+
+      &:hover {
+        background-color: #f9fafb;
+      }
+    }
+
+    td {
+      padding: 0.875rem 1rem;
+      color: $color-gray-800;
+
+      &.font-medium {
+        font-weight: $font-weight-medium;
+        color: $color-gray-900;
+      }
+
+      &.text-right {
+        text-align: right;
+      }
+
+      &.font-semibold {
+        font-weight: $font-weight-semibold;
+        color: $color-primary-600;
+      }
+
+      &.empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: $color-gray-600;
+        font-style: italic;
+      }
+    }
+  }
+}
+
+.condition-breakdown {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.condition-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.375rem;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+
+  &.new {
+    background-color: #dcfce7;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+  }
+
+  &.used {
+    background-color: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+  }
+
+  .reserved-count {
+    font-size: $font-size-xs;
+    opacity: 0.8;
+  }
+}

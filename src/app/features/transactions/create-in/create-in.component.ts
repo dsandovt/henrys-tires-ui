@@ -1,0 +1,345 @@
+import { Component, inject, signal, OnInit, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { TransactionsService } from '../../../core/services/transactions.service';
+import { ItemsService } from '../../../core/services/items.service';
+import { BranchesService } from '../../../core/services/branches.service';
+import { AuthService } from '../../../core/auth/auth.service';
+import { ToastService } from '../../../shared/components/toast/toast.service';
+import { ItemCondition, InTransactionLineRequest, Item, Branch } from '../../../core/models/inventory.models';
+import { CardComponent } from '../../../shared/components/card/card.component';
+import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { InputComponent } from '../../../shared/components/input/input.component';
+import { SelectComponent, SelectOption } from '../../../shared/components/select/select.component';
+import { AlertComponent } from '../../../shared/components/alert/alert.component';
+import { convertEasternToUtc } from '../../../core/utils/timezone.utils';
+
+interface TransactionLine {
+  itemCode: string;
+  condition: ItemCondition;
+  quantity: number;
+  unitPrice?: number;
+  currency: string;
+  priceNotes?: string;
+}
+
+@Component({
+  selector: 'app-create-in',
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    CardComponent,
+    ButtonComponent,
+    InputComponent,
+    SelectComponent,
+    AlertComponent
+  ],
+  template: `
+    <div class="create-transaction">
+      <app-card title="Create Transfer IN Transaction">
+        <form (ngSubmit)="onSubmit()" class="transaction-form">
+          <app-alert variant="info">
+            Transfer IN adds stock to inventory. You can optionally provide purchase prices for accounting purposes.
+          </app-alert>
+
+          <div class="form-section">
+            <h3>Transaction Details</h3>
+
+            <div class="form-row">
+              <app-select
+                *ngIf="authService.isAdmin()"
+                [(ngModel)]="branchCode"
+                name="branchCode"
+                label="Branch"
+                placeholder="Select branch or leave empty for default"
+                [options]="branchOptions()"
+                hint="Leave empty to use your assigned branch"
+              ></app-select>
+
+              <app-input
+                [(ngModel)]="transactionDate"
+                name="transactionDate"
+                label="Transaction Date"
+                type="datetime-local"
+                [required]="true"
+              ></app-input>
+            </div>
+
+            <app-input
+              [(ngModel)]="notes"
+              name="notes"
+              label="Notes (Optional)"
+              placeholder="Add notes about this transaction"
+            ></app-input>
+          </div>
+
+          <div class="form-section">
+            <div class="section-header">
+              <h3>Line Items</h3>
+              <app-button
+                type="button"
+                variant="secondary"
+                size="sm"
+                (click)="addLine()"
+              >
+                + Add Item
+              </app-button>
+            </div>
+
+            <div *ngIf="lines().length === 0" class="empty-lines">
+              <p>No items added yet. Click "Add Item" to begin.</p>
+            </div>
+
+            <div *ngFor="let line of lines(); let i = index" class="line-item">
+              <div class="line-header">
+                <span class="line-number">Item #{{ i + 1 }}</span>
+                <button
+                  type="button"
+                  class="remove-btn"
+                  (click)="removeLine(i)"
+                  aria-label="Remove item"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div class="line-fields">
+                <div class="form-row">
+                  <app-select
+                    [(ngModel)]="line.itemCode"
+                    [name]="'itemCode_' + i"
+                    label="Item"
+                    placeholder="Search by code or description"
+                    [options]="itemOptions()"
+                    [required]="true"
+                  ></app-select>
+
+                  <div class="form-group">
+                    <label [for]="'condition_' + i">Condition *</label>
+                    <select
+                      [(ngModel)]="line.condition"
+                      [name]="'condition_' + i"
+                      [id]="'condition_' + i"
+                      class="select-input"
+                      required
+                    >
+                      <option value="New">New</option>
+                      <option value="Used">Used</option>
+                    </select>
+                  </div>
+
+                  <app-input
+                    [(ngModel)]="line.quantity"
+                    [name]="'quantity_' + i"
+                    label="Quantity"
+                    type="number"
+                    placeholder="1"
+                    [required]="true"
+                  ></app-input>
+                </div>
+
+                <div class="form-row">
+                  <app-input
+                    [(ngModel)]="line.unitPrice"
+                    [name]="'unitPrice_' + i"
+                    label="Unit Price (Optional)"
+                    type="number"
+                    placeholder="0.00"
+                    hint="Leave empty to use default pricing"
+                  ></app-input>
+
+                  <app-input
+                    [(ngModel)]="line.currency"
+                    [name]="'currency_' + i"
+                    label="Currency"
+                    placeholder="USD"
+                  ></app-input>
+                </div>
+
+                <app-input
+                  [(ngModel)]="line.priceNotes"
+                  [name]="'priceNotes_' + i"
+                  label="Price Notes (Optional)"
+                  placeholder="e.g., Bulk discount, Supplier promotion"
+                ></app-input>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <app-button
+              type="button"
+              variant="secondary"
+              (click)="onCancel()"
+            >
+              Cancel
+            </app-button>
+            <app-button
+              type="submit"
+              variant="primary"
+              [loading]="loading()"
+              [disabled]="!isFormValid()"
+            >
+              Create Transaction
+            </app-button>
+          </div>
+        </form>
+      </app-card>
+    </div>
+  `,
+  styleUrls: ['./create-in.component.scss']
+})
+export class CreateInComponent implements OnInit {
+  private transactionsService = inject(TransactionsService);
+  private itemsService = inject(ItemsService);
+  private branchesService = inject(BranchesService);
+  private router = inject(Router);
+  private toastService = inject(ToastService);
+  authService = inject(AuthService);
+
+  branchCode = '';
+  transactionDate = new Date().toISOString().slice(0, 16);
+  notes = '';
+  lines = signal<TransactionLine[]>([]);
+  loading = signal(false);
+
+  // Data for dropdowns
+  branches = signal<Branch[]>([]);
+  items = signal<Item[]>([]);
+
+  // Computed options for selects
+  branchOptions = computed<SelectOption[]>(() =>
+    this.branches().map(branch => ({
+      value: branch.code,
+      label: branch.name,
+      subtitle: branch.code
+    }))
+  );
+
+  itemOptions = computed<SelectOption[]>(() =>
+    this.items().map(item => ({
+      value: item.itemCode,
+      label: item.itemCode,
+      subtitle: item.description
+    }))
+  );
+
+  ngOnInit(): void {
+    // Load branches and items
+    this.loadBranches();
+    this.loadItems();
+
+    // Add one empty line by default
+    this.addLine();
+  }
+
+  loadBranches(): void {
+    this.branchesService.getAllBranches().subscribe({
+      next: (branches) => {
+        this.branches.set(branches);
+      },
+      error: (err) => {
+        console.error('Failed to load branches:', err);
+      }
+    });
+  }
+
+  loadItems(): void {
+    // Load only Goods (not Services) for inventory transactions
+    this.itemsService.getItems({ page: 1, pageSize: 1000, classification: 'Good' }).subscribe({
+      next: (response) => {
+        this.items.set(response.items);
+      },
+      error: (err) => {
+        console.error('Failed to load items:', err);
+      }
+    });
+  }
+
+  addLine(): void {
+    this.lines.update(lines => [
+      ...lines,
+      {
+        itemCode: '',
+        condition: ItemCondition.New,
+        quantity: 1,
+        unitPrice: undefined,
+        currency: 'USD',
+        priceNotes: ''
+      }
+    ]);
+  }
+
+  removeLine(index: number): void {
+    this.lines.update(lines => lines.filter((_, i) => i !== index));
+  }
+
+  isFormValid(): boolean {
+    if (this.lines().length === 0) return false;
+
+    return this.lines().every(line =>
+      line.itemCode.trim() !== '' &&
+      line.quantity > 0
+    );
+  }
+
+  onSubmit(): void {
+    if (!this.isFormValid()) {
+      this.toastService.warning('Please fill in all required fields');
+      return;
+    }
+
+    this.loading.set(true);
+
+    const request: any = {
+      branchCode: this.branchCode || undefined,
+      transactionDateUtc: convertEasternToUtc(this.transactionDate), // Convert Eastern Time to UTC
+      notes: this.notes || undefined,
+      lines: this.lines().map(line => ({
+        itemCode: line.itemCode.trim().toUpperCase(),
+        itemCondition: line.condition,
+        quantity: line.quantity,
+        unitPrice: line.unitPrice || undefined,
+        currency: line.currency || 'USD',
+        priceNotes: line.priceNotes || undefined
+      }))
+    };
+
+    this.transactionsService.createInTransaction(request).subscribe({
+      next: (transaction) => {
+        this.loading.set(false);
+        this.toastService.success('Transfer IN transaction created successfully');
+
+        // Commit the transaction immediately
+        this.commitTransaction(transaction.id);
+      },
+      error: (err) => {
+        this.loading.set(false);
+        console.error('Failed to create transaction:', err);
+        this.toastService.danger(
+          err.error?.message || 'Failed to create transaction. Please try again.'
+        );
+      }
+    });
+  }
+
+  commitTransaction(transactionId: string): void {
+    this.transactionsService.commitTransaction(transactionId).subscribe({
+      next: () => {
+        this.toastService.success('Transaction committed successfully');
+        this.router.navigate(['/transactions', transactionId]);
+      },
+      error: (err) => {
+        console.error('Failed to commit transaction:', err);
+        this.toastService.warning('Transaction created but failed to commit');
+        this.router.navigate(['/transactions']);
+      }
+    });
+  }
+
+  onCancel(): void {
+    this.router.navigate(['/transactions']);
+  }
+}

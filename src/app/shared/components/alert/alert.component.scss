@@ -1,0 +1,76 @@
+@import 'assets/styles/variables';
+
+.alert {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $spacing-3;
+  padding: $alert-padding;
+  border-radius: $alert-border-radius;
+  border: $border-width solid;
+}
+
+.alert-content {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-3;
+  flex: 1;
+}
+
+.alert-icon {
+  flex-shrink: 0;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+}
+
+.alert-message {
+  flex: 1;
+  font-size: $font-size-sm;
+  line-height: $line-height-base;
+}
+
+.alert-close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  font-size: $font-size-2xl;
+  line-height: 1;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: opacity $transition-fast;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.alert-success {
+  background-color: $alert-success-bg;
+  color: $alert-success-color;
+  border-color: $alert-success-border;
+}
+
+.alert-warning {
+  background-color: $alert-warning-bg;
+  color: $alert-warning-color;
+  border-color: $alert-warning-border;
+}
+
+.alert-danger {
+  background-color: $alert-danger-bg;
+  color: $alert-danger-color;
+  border-color: $alert-danger-border;
+}
+
+.alert-info {
+  background-color: $alert-info-bg;
+  color: $alert-info-color;
+  border-color: $alert-info-border;
+}

@@ -1,0 +1,131 @@
+@import 'assets/styles/variables';
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-2;
+  font-family: $font-family-base;
+  font-weight: $font-weight-medium;
+  border: $border-width solid transparent;
+  cursor: pointer;
+  transition: all $transition-fast;
+  white-space: nowrap;
+  user-select: none;
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba($color-primary-500, 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &.btn-loading {
+    pointer-events: none;
+  }
+}
+
+// Sizes
+.btn-sm {
+  padding: $button-padding-y-sm $button-padding-x-sm;
+  font-size: $button-font-size-sm;
+  border-radius: $button-border-radius;
+}
+
+.btn-base {
+  padding: $button-padding-y-base $button-padding-x-base;
+  font-size: $button-font-size-base;
+  border-radius: $button-border-radius;
+}
+
+.btn-lg {
+  padding: $button-padding-y-lg $button-padding-x-lg;
+  font-size: $button-font-size-lg;
+  border-radius: $button-border-radius;
+}
+
+// Variants
+.btn-primary {
+  background-color: $button-primary-bg;
+  color: $button-primary-color;
+  border-color: $button-primary-bg;
+
+  &:hover:not(:disabled) {
+    background-color: $button-primary-hover-bg;
+    border-color: $button-primary-hover-bg;
+  }
+
+  &:active:not(:disabled) {
+    background-color: $button-primary-active-bg;
+    border-color: $button-primary-active-bg;
+  }
+}
+
+.btn-secondary {
+  background-color: $button-secondary-bg;
+  color: $button-secondary-color;
+  border-color: $button-secondary-border;
+
+  &:hover:not(:disabled) {
+    background-color: $button-secondary-hover-bg;
+  }
+
+  &:active:not(:disabled) {
+    background-color: $button-secondary-active-bg;
+  }
+}
+
+.btn-danger {
+  background-color: $button-danger-bg;
+  color: $button-danger-color;
+  border-color: $button-danger-bg;
+
+  &:hover:not(:disabled) {
+    background-color: $button-danger-hover-bg;
+    border-color: $button-danger-hover-bg;
+  }
+
+  &:active:not(:disabled) {
+    background-color: $button-danger-active-bg;
+    border-color: $button-danger-active-bg;
+  }
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: $button-ghost-color;
+  border-color: transparent;
+
+  &:hover:not(:disabled) {
+    background-color: $button-ghost-hover-bg;
+  }
+
+  &:active:not(:disabled) {
+    background-color: $button-ghost-active-bg;
+  }
+}
+
+// Full width
+.btn-full-width {
+  width: 100%;
+}
+
+// Loading spinner
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

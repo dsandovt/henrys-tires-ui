@@ -1,0 +1,96 @@
+@import 'assets/styles/variables';
+
+.input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-2;
+}
+
+.input-label {
+  display: block;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-gray-700;
+}
+
+.required-mark {
+  color: $color-danger-500;
+  margin-left: 2px;
+}
+
+.input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input {
+  width: 100%;
+  padding: $input-padding-y $input-padding-x;
+  font-size: $input-font-size;
+  line-height: $input-line-height;
+  color: $input-color;
+  background-color: $input-bg;
+  border: $border-width solid $input-border-color;
+  border-radius: $input-border-radius;
+  transition: all $transition-fast;
+
+  &::placeholder {
+    color: $input-placeholder-color;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $input-focus-border-color;
+    box-shadow: 0 0 0 $input-focus-ring-width $input-focus-ring-color;
+  }
+
+  &.input-error {
+    border-color: $input-error-border-color;
+    padding-right: $spacing-10; // Make room for error icon
+
+    &:focus {
+      box-shadow: 0 0 0 $input-focus-ring-width $input-error-ring-color;
+    }
+  }
+
+  &.input-disabled,
+  &:disabled {
+    background-color: $input-disabled-bg;
+    color: $input-disabled-color;
+    cursor: not-allowed;
+  }
+
+  &:read-only {
+    background-color: $color-gray-50;
+    cursor: default;
+  }
+}
+
+.error-icon {
+  position: absolute;
+  right: $spacing-3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  color: $color-white;
+  background-color: $color-danger-500;
+  border-radius: $border-radius-full;
+  pointer-events: none;
+}
+
+.error-message {
+  font-size: $font-size-xs;
+  color: $color-danger-600;
+  margin: 0;
+}
+
+.hint-message {
+  font-size: $font-size-xs;
+  color: $color-gray-500;
+  margin: 0;
+}

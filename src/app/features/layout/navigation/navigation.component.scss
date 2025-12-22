@@ -1,0 +1,140 @@
+@import 'assets/styles/variables';
+
+.navigation {
+  width: $nav-width;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: $nav-bg;
+  border-right: $border-width solid $nav-border-color;
+}
+
+.nav-header {
+  padding: $spacing-6 $spacing-4;
+  border-bottom: $border-width solid $nav-border-color;
+}
+
+.nav-title {
+  margin: 0;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-gray-900;
+}
+
+.nav-subtitle {
+  margin: $spacing-1 0 0;
+  font-size: $font-size-xs;
+  color: $color-gray-500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: $spacing-3;
+  padding: $spacing-4;
+  border-bottom: $border-width solid $nav-border-color;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: $color-primary-100;
+  color: $color-primary-700;
+  border-radius: $border-radius-full;
+  font-weight: $font-weight-semibold;
+  font-size: $font-size-sm;
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  margin: 0;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-gray-900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-role {
+  margin: 0;
+  font-size: $font-size-xs;
+  color: $color-gray-500;
+}
+
+.nav-menu {
+  flex: 1;
+  list-style: none;
+  margin: 0;
+  padding: $spacing-2 0;
+  overflow-y: auto;
+}
+
+.nav-item {
+  margin: 0;
+  padding: 0;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: $spacing-3;
+  padding: $nav-item-padding-y $nav-item-padding-x;
+  color: $nav-item-color;
+  text-decoration: none;
+  transition: all $transition-fast;
+  border-left: 3px solid transparent;
+
+  &:hover {
+    background-color: $nav-item-hover-bg;
+  }
+
+  &.active {
+    background-color: $nav-item-active-bg;
+    color: $nav-item-active-color;
+    border-left-color: $nav-item-active-border-color;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.nav-icon {
+  font-size: $font-size-lg;
+  flex-shrink: 0;
+}
+
+.nav-label {
+  font-size: $font-size-sm;
+}
+
+.nav-footer {
+  padding: $spacing-4;
+  border-top: $border-width solid $nav-border-color;
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: $spacing-3;
+  width: 100%;
+  padding: $nav-item-padding-y $nav-item-padding-x;
+  background: none;
+  border: none;
+  color: $nav-item-color;
+  cursor: pointer;
+  text-align: left;
+  transition: all $transition-fast;
+  border-radius: $border-radius-base;
+
+  &:hover {
+    background-color: $nav-item-hover-bg;
+  }
+}

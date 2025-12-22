@@ -1,0 +1,113 @@
+@import 'assets/styles/variables';
+
+.toast-container {
+  position: fixed;
+  top: $spacing-4;
+  right: $spacing-4;
+  z-index: $z-index-toast;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-3;
+  max-width: $toast-width;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $spacing-3;
+  padding: $toast-padding;
+  background-color: $toast-bg;
+  border-radius: $toast-border-radius;
+  box-shadow: $toast-shadow;
+  pointer-events: auto;
+  animation: slideIn 0.3s ease-out;
+  border-left: 4px solid;
+}
+
+.toast-content {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-3;
+  flex: 1;
+}
+
+.toast-icon {
+  flex-shrink: 0;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+}
+
+.toast-message {
+  flex: 1;
+  margin: 0;
+  font-size: $font-size-sm;
+  line-height: $line-height-base;
+  color: $color-gray-900;
+}
+
+.toast-close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  font-size: $font-size-2xl;
+  line-height: 1;
+  color: $color-gray-500;
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color $transition-fast;
+
+  &:hover {
+    color: $color-gray-700;
+  }
+}
+
+// Variant colors (border-left color)
+.toast-success {
+  border-left-color: $color-success-500;
+
+  .toast-icon {
+    color: $color-success-600;
+  }
+}
+
+.toast-warning {
+  border-left-color: $color-warning-500;
+
+  .toast-icon {
+    color: $color-warning-600;
+  }
+}
+
+.toast-danger {
+  border-left-color: $color-danger-500;
+
+  .toast-icon {
+    color: $color-danger-600;
+  }
+}
+
+.toast-info {
+  border-left-color: $color-info-500;
+
+  .toast-icon {
+    color: $color-info-600;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}

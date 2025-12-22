@@ -1,0 +1,177 @@
+<div class="create-sale">
+  <app-card title="Create Sale">
+    <form (ngSubmit)="onSubmit()" class="sale-form">
+      <app-alert variant="info">
+        Sales can include BOTH Goods (inventory items) and Services (revenue only).
+        Only Goods will affect inventory.
+      </app-alert>
+
+      <div class="form-section">
+        <h3>Sale Details</h3>
+
+        <div class="form-row">
+          <app-select
+            *ngIf="authService.isAdmin()"
+            [(ngModel)]="branchId"
+            name="branchId"
+            label="Branch"
+            placeholder="Select branch or leave empty for default"
+            [options]="branchOptions()"
+            hint="Leave empty to use your assigned branch"
+          ></app-select>
+
+          <app-input
+            [(ngModel)]="saleDate"
+            name="saleDate"
+            label="Sale Date"
+            type="datetime-local"
+            [required]="true"
+          ></app-input>
+        </div>
+
+        <div class="form-row">
+          <app-input
+            [(ngModel)]="customerName"
+            name="customerName"
+            label="Customer Name (Optional)"
+            placeholder="Enter customer name"
+          ></app-input>
+
+          <app-input
+            [(ngModel)]="customerPhone"
+            name="customerPhone"
+            label="Customer Phone (Optional)"
+            placeholder="Enter customer phone"
+          ></app-input>
+        </div>
+
+        <app-input
+          [(ngModel)]="notes"
+          name="notes"
+          label="Notes (Optional)"
+          placeholder="Add notes about this sale"
+        ></app-input>
+      </div>
+
+      <div class="form-section">
+        <div class="section-header">
+          <h3>Line Items</h3>
+          <app-button
+            type="button"
+            variant="secondary"
+            size="sm"
+            (click)="addLine()"
+          >
+            + Add Item
+          </app-button>
+        </div>
+
+        <div *ngIf="lines().length === 0" class="empty-lines">
+          <p>No items added yet. Click "Add Item" to begin.</p>
+        </div>
+
+        <div *ngFor="let line of lines(); let i = index" class="line-item">
+          <div class="line-header">
+            <span class="line-number">Item #{{ i + 1 }}</span>
+            <span class="classification-badge" [class.good]="line.classification === 'Good'" [class.service]="line.classification === 'Service'">
+              {{ line.classification }}
+            </span>
+            <button
+              type="button"
+              class="remove-btn"
+              (click)="removeLine(i)"
+              aria-label="Remove item"
+            >
+              ×
+            </button>
+          </div>
+
+          <div class="line-fields">
+            <div class="form-row">
+              <app-select
+                [(ngModel)]="line.itemId"
+                [name]="'itemId_' + i"
+                label="Item"
+                placeholder="Search by code or description"
+                [options]="itemOptions()"
+                [required]="true"
+                (selectionChange)="onItemSelected(i)"
+              ></app-select>
+
+              <div class="form-group" *ngIf="line.classification === 'Good'">
+                <label [for]="'condition_' + i">Condition *</label>
+                <select
+                  [(ngModel)]="line.condition"
+                  [name]="'condition_' + i"
+                  [id]="'condition_' + i"
+                  class="select-input"
+                  (ngModelChange)="checkStock(i)"
+                  required
+                >
+                  <option value="New">New</option>
+                  <option value="Used">Used</option>
+                </select>
+              </div>
+
+              <app-input
+                [(ngModel)]="line.quantity"
+                [name]="'quantity_' + i"
+                label="Quantity"
+                type="number"
+                placeholder="1"
+                [required]="true"
+                [error]="getStockError(line)"
+                [hint]="line.classification === 'Good' ? 'Available: ' + (line.availableStock ?? '...') : ''"
+              ></app-input>
+            </div>
+
+            <div class="form-row">
+              <app-input
+                [(ngModel)]="line.unitPrice"
+                [name]="'unitPrice_' + i"
+                label="Unit Price *"
+                type="number"
+                placeholder="0.00"
+                [required]="true"
+              ></app-input>
+
+              <app-input
+                [(ngModel)]="line.currency"
+                [name]="'currency_' + i"
+                label="Currency"
+                placeholder="USD"
+              ></app-input>
+
+              <div class="form-group">
+                <label>Line Total</label>
+                <div class="line-total">{{ calculateLineTotal(line) | number: '1.2-2' }} {{ line.currency }}</div>
+              </div>
+            </div>
+
+            <div class="item-details" *ngIf="line.itemCode">
+              <small>{{ line.itemCode }} - {{ line.description }}</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <app-button
+          type="button"
+          variant="secondary"
+          (click)="onCancel()"
+        >
+          Cancel
+        </app-button>
+        <app-button
+          type="submit"
+          variant="primary"
+          [loading]="loading()"
+          [disabled]="!isFormValid()"
+        >
+          Create & Post Sale
+        </app-button>
+      </div>
+    </form>
+  </app-card>
+</div>
