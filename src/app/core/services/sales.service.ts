@@ -2,24 +2,25 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Sale, CreateSaleRequest, SaleListResponse } from '../models/inventory.models';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class SalesService {
   private http = inject(HttpClient);
-  private readonly apiUrl = '/api/v1/sale';
+  private readonly API_URL = `${environment.apiUrl}/v1/sales`;
 
   createSale(request: CreateSaleRequest): Observable<Sale> {
-    return this.http.post<Sale>(this.apiUrl, request);
+    return this.http.post<Sale>(this.API_URL, request);
   }
 
   postSale(saleId: string): Observable<Sale> {
-    return this.http.post<Sale>(`${this.apiUrl}/${saleId}/post`, {});
+    return this.http.post<Sale>(`${this.API_URL}/${saleId}/post`, {});
   }
 
   getSaleById(saleId: string): Observable<Sale> {
-    return this.http.get<Sale>(`${this.apiUrl}/${saleId}`);
+    return this.http.get<Sale>(`${this.API_URL}/${saleId}`);
   }
 
   getSales(params?: {
@@ -37,6 +38,6 @@ export class SalesService {
     if (params?.page) httpParams = httpParams.set('page', params.page.toString());
     if (params?.pageSize) httpParams = httpParams.set('pageSize', params.pageSize.toString());
 
-    return this.http.get<SaleListResponse>(this.apiUrl, { params: httpParams });
+    return this.http.get<SaleListResponse>(this.API_URL, { params: httpParams });
   }
 }
