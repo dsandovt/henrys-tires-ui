@@ -4,11 +4,11 @@ import { Observable } from 'rxjs';
 import { Sale, CreateSaleRequest, SaleListResponse } from '../models/inventory.models';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class SalesService {
   private http = inject(HttpClient);
-  private readonly apiUrl = '/api/v1/sales';
+  private readonly apiUrl = '/api/v1/sale';
 
   createSale(request: CreateSaleRequest): Observable<Sale> {
     return this.http.post<Sale>(this.apiUrl, request);
