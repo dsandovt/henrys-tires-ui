@@ -5,19 +5,16 @@ import { Branch } from '../models/inventory.models';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class BranchesService {
   private readonly API_URL = `${environment.apiUrl}/branches`;
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * Get all branches
-   */
   getAllBranches(): Observable<Branch[]> {
-    return this.http.get<{ success: boolean; data: Branch[] }>(this.API_URL).pipe(
-      map(response => response.data)
-    );
+    return this.http
+      .get<{ success: boolean; data: Branch[] }>(this.API_URL)
+      .pipe(map((response) => response.data));
   }
 }

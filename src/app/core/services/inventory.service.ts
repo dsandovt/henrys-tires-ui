@@ -6,17 +6,16 @@ import { PaginatedResponse, PaginationParams } from '../models/api.models';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class InventoryService {
   private readonly API_URL = `${environment.apiUrl}/v1/transactions/inventory`;
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * Get paginated inventory summaries
-   */
-  getInventorySummaries(params?: PaginationParams & { branchCode?: string; condition?: string }): Observable<PaginatedResponse<InventorySummary>> {
+  getInventorySummaries(
+    params?: PaginationParams & { branchCode?: string; condition?: string },
+  ): Observable<PaginatedResponse<InventorySummary>> {
     let httpParams = new HttpParams();
     if (params?.page) httpParams = httpParams.set('page', params.page.toString());
     if (params?.pageSize) httpParams = httpParams.set('pageSize', params.pageSize.toString());
@@ -24,20 +23,26 @@ export class InventoryService {
     if (params?.branchCode) httpParams = httpParams.set('branchCode', params.branchCode);
     if (params?.condition) httpParams = httpParams.set('condition', params.condition);
 
-    return this.http.get<{ success: boolean; data: PaginatedResponse<InventorySummary> }>(this.API_URL, { params: httpParams }).pipe(
-      map(response => response.data)
-    );
+    return this.http
+      .get<{
+        success: boolean;
+        data: PaginatedResponse<InventorySummary>;
+      }>(this.API_URL, { params: httpParams })
+      .pipe(map((response) => response.data));
   }
 
-  /**
-   * Get inventory summary by branch and item
-   */
-  getInventorySummaryByBranchAndItem(branchCode: string, itemCode: string): Observable<InventorySummary> {
+  getInventorySummaryByBranchAndItem(
+    branchCode: string,
+    itemCode: string,
+  ): Observable<InventorySummary> {
     let httpParams = new HttpParams();
     httpParams = httpParams.set('branchCode', branchCode);
 
-    return this.http.get<{ success: boolean; data: InventorySummary }>(`${this.API_URL}/${itemCode}`, { params: httpParams }).pipe(
-      map(response => response.data)
-    );
+    return this.http
+      .get<{
+        success: boolean;
+        data: InventorySummary;
+      }>(`${this.API_URL}/${itemCode}`, { params: httpParams })
+      .pipe(map((response) => response.data));
   }
 }
