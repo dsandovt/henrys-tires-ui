@@ -2,6 +2,8 @@
 // Dashboard Domain Models
 // ============================================================================
 
+import { Currency } from '../../../core/models/inventory.models';
+
 export interface DashboardData {
   summary: DashboardSummary;
   branchBreakdown: BranchBreakdown[];
@@ -24,7 +26,7 @@ export interface DashboardSummary {
   purchaseTransactions: number;
 
   // Metadata
-  currency: string;
+  currency: Currency;
   startDate: string;
   endDate: string;
 }
@@ -37,7 +39,7 @@ export interface BranchBreakdown {
   netTotal: number;
   salesTransactionCount: number;
   purchaseTransactionCount: number;
-  currency: string;
+  currency: Currency;
 }
 
 export interface RecentActivityItem {
@@ -46,7 +48,7 @@ export interface RecentActivityItem {
   type: 'Sale' | 'Purchase';
   status: 'Draft' | 'Committed' | 'Cancelled';
   amount: number;
-  currency: string;
+  currency: Currency;
   branchCode: string;
   branchName: string;
   transactionDateUtc: string;

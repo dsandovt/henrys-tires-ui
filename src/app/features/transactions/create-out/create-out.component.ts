@@ -366,7 +366,7 @@ export class CreateOutComponent implements OnInit {
         itemCode: line.itemCode.trim().toUpperCase(),
         itemCondition: line.condition,
         quantity: line.quantity,
-        unitPrice: line.unitPrice || undefined,
+        unitPrice: line.unitPrice !== undefined && line.unitPrice !== null ? line.unitPrice : undefined,
         currency: line.currency || 'USD',
         priceNotes: line.priceNotes || undefined
       }))

@@ -8,7 +8,7 @@ import { ItemsService } from '../../../core/services/items.service';
 import { BranchesService } from '../../../core/services/branches.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
-import { ItemCondition, Item, Branch, CreateSaleLineRequest } from '../../../core/models/inventory.models';
+import { ItemCondition, Item, Branch, CreateSaleLineRequest, Currency } from '../../../core/models/inventory.models';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
@@ -102,7 +102,7 @@ export class CreateSaleComponent implements OnInit {
         condition: ItemCondition.New,
         quantity: 1,
         unitPrice: 0,
-        currency: 'USD',
+        currency: Currency.USD,
         availableStock: undefined
       }
     ]);

@@ -7,7 +7,7 @@ import { ButtonComponent } from '../../../../shared/components/button/button.com
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { PricesService } from '../../../../core/services/prices.service';
 import { ToastService } from '../../../../shared/components/toast/toast.service';
-import { ConsumableItemPrice } from '../../../../core/models/inventory.models';
+import { ConsumableItemPrice, Currency } from '../../../../core/models/inventory.models';
 
 @Component({
   selector: 'app-price-form-modal',
@@ -205,7 +205,7 @@ export class PriceFormModalComponent {
     this.itemCode = price.itemCode;
     this.currentPrice = `${price.currency} ${price.latestPrice.toFixed(2)}`;
     this.newPrice = null;
-    this.currency = price.currency;
+    this.currency = price.currency.toString();
     this.priceHistory.set(price.priceHistory || []);
 
     this.clearErrors();
@@ -259,7 +259,7 @@ export class PriceFormModalComponent {
     this.pricesService.updatePrice(this.itemCode, {
       itemCode: this.itemCode,
       newPrice: this.newPrice!,
-      currency: this.currency.trim().toUpperCase()
+      currency: this.currency.trim().toUpperCase() as Currency
     }).subscribe({
       next: (updatedPrice) => {
         this.loading.set(false);

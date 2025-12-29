@@ -45,7 +45,7 @@ import { formatEasternTimeShort } from '../../../core/utils/timezone.utils';
     </div>
   `,
   styles: [`
-    @import 'assets/styles/variables';
+    @use 'assets/styles/variables' as *;
     .transaction-list { display: flex; flex-direction: column; gap: $spacing-6; }
     .page-header { display: flex; gap: $spacing-4; }
     .pagination { display: flex; justify-content: space-between; align-items: center; padding-top: $spacing-4; margin-top: $spacing-4; border-top: 1px solid #e5e5e5; }

@@ -82,7 +82,7 @@ import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
     </div>
   `,
   styles: [`
-    @import 'assets/styles/variables';
+    @use 'assets/styles/variables' as *;
     .sale-details { max-width: 1200px; }
     .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: $spacing-6; }
     h1 { margin: 0; font-size: $font-size-2xl; }
