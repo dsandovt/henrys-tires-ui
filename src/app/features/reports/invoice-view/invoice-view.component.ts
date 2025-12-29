@@ -47,7 +47,7 @@ import { LucideAngularModule, FileText, LucideIconProvider, LUCIDE_ICONS } from 
               <div>
                 <h3>INVOICE</h3>
                 <p><strong>Invoice #:</strong> {{ invoice()?.invoiceNumber }}</p>
-                <p><strong>Date:</strong> {{ invoice()?.invoiceDateUtc | date:'short' }}</p>
+                <p><strong>Date:</strong> {{ invoice()?.invoiceDateUtc | date:'MM/dd/yyyy' }}</p>
                 <p><strong>Branch:</strong> {{ invoice()?.branchCode }} - {{ invoice()?.branchName }}</p>
                 <p><strong>Payment Method:</strong> {{ invoice()?.paymentMethod }}</p>
               </div>

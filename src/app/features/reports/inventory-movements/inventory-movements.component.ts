@@ -75,8 +75,8 @@ import { LucideAngularModule, Download, LucideIconProvider, LUCIDE_ICONS } from 
               <div class="transaction-details">
                 <p><strong>Type:</strong> {{ transaction.type }}</p>
                 <p><strong>Branch:</strong> {{ transaction.branchCode }}</p>
-                <p><strong>Date:</strong> {{ transaction.transactionDateUtc | date:'short' }}</p>
-                <p *ngIf="transaction.committedAtUtc"><strong>Committed:</strong> {{ transaction.committedAtUtc | date:'short' }}</p>
+                <p><strong>Date:</strong> {{ transaction.transactionDateUtc | date:'MM/dd/yyyy' }}</p>
+                <p *ngIf="transaction.committedAtUtc"><strong>Committed:</strong> {{ transaction.committedAtUtc | date:'MM/dd/yyyy' }}</p>
               </div>
               <div class="transaction-lines">
                 <table>
