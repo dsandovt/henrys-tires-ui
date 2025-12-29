@@ -34,7 +34,7 @@ import { UserFormModalComponent } from '../user-form-modal/user-form-modal.compo
         </div>
       </app-card>
 
-      <app-user-form-modal (userSaved)="onUserSaved()"></app-user-form-modal>
+      <app-user-form-modal [branches]="branches" (userSaved)="onUserSaved()"></app-user-form-modal>
     </div>
   `,
   styles: [`

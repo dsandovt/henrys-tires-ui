@@ -69,6 +69,25 @@ export const routes: Routes = [
           import('./features/sales/sale-details/sale-details.component').then(m => m.SaleDetailsComponent)
       },
 
+      // Reports (Admin only)
+      {
+        path: 'reports/stock',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./features/reports/stock-report/stock-report.component').then(m => m.StockReportComponent)
+      },
+      {
+        path: 'reports/inventory-movements',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./features/reports/inventory-movements/inventory-movements.component').then(m => m.InventoryMovementsComponent)
+      },
+      {
+        path: 'reports/invoice/:type/:id',
+        loadComponent: () =>
+          import('./features/reports/invoice-view/invoice-view.component').then(m => m.InvoiceViewComponent)
+      },
+
       // Admin-only routes
       {
         path: 'dashboard',

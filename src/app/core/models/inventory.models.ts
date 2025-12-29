@@ -101,6 +101,13 @@ export enum PriceSource {
   AverageCost = 'AverageCost'
 }
 
+export enum PaymentMethod {
+  Cash = 'Cash',
+  Card = 'Card',
+  AcimaShortTermCredit = 'AcimaShortTermCredit',
+  AccountsReceivable = 'AccountsReceivable'
+}
+
 export interface Transaction {
   id: string;
   transactionNumber: string;
@@ -109,6 +116,7 @@ export interface Transaction {
   status: TransactionStatus;
   transactionDateUtc: string;
   notes?: string;
+  paymentMethod?: PaymentMethod;
   committedAtUtc?: string;
   committedBy?: string;
   lines: TransactionLine[];
@@ -138,6 +146,7 @@ export interface CreateInTransactionRequest {
   branchCode?: string;
   transactionDateUtc: string;
   notes?: string;
+  paymentMethod?: PaymentMethod;
   lines: InTransactionLineRequest[];
 }
 
@@ -154,6 +163,7 @@ export interface CreateOutTransactionRequest {
   branchCode?: string;
   transactionDateUtc: string;
   notes?: string;
+  paymentMethod?: PaymentMethod;
   lines: OutTransactionLineRequest[];
 }
 
@@ -264,6 +274,7 @@ export interface Sale {
   customerName?: string;
   customerPhone?: string;
   notes?: string;
+  paymentMethod: PaymentMethod;
   status: TransactionStatus;
   postedAtUtc?: string;
   postedBy?: string;
@@ -294,6 +305,7 @@ export interface CreateSaleRequest {
   customerName?: string;
   customerPhone?: string;
   notes?: string;
+  paymentMethod: PaymentMethod;
 }
 
 export interface CreateSaleLineRequest {

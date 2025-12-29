@@ -26,6 +26,7 @@ import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
         <div class="info-grid">
           <div class="info-item"><label>Branch ID:</label><span>{{ sale()!.branchId }}</span></div>
           <div class="info-item"><label>Date:</label><span>{{ sale()!.saleDateUtc | easternTime:'withZone' }}</span></div>
+          <div class="info-item"><label>Payment Method:</label><span>{{ formatPaymentMethod(sale()!.paymentMethod) }}</span></div>
           <div class="info-item" *ngIf="sale()!.customerName"><label>Customer:</label><span>{{ sale()!.customerName }}</span></div>
           <div class="info-item" *ngIf="sale()!.customerPhone"><label>Phone:</label><span>{{ sale()!.customerPhone }}</span></div>
           <div class="info-item"><label>Created By:</label><span>{{ sale()!.createdBy }}</span></div>
@@ -78,6 +79,7 @@ import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
 
       <div class="actions">
         <app-button variant="secondary" (click)="goBack()">Back to Sales</app-button>
+        <app-button variant="primary" [routerLink]="['/reports/invoice/sale', sale()!.id]">View Invoice</app-button>
       </div>
     </div>
   `,
@@ -100,7 +102,7 @@ import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
     .classification-badge.service { background-color: #fef3c7; color: #92400e; }
     .link { color: $color-primary-600; text-decoration: none; &:hover { text-decoration: underline; } }
     .no-link { color: $color-gray-400; }
-    .actions { display: flex; justify-content: flex-end; margin-top: $spacing-6; }
+    .actions { display: flex; justify-content: flex-end; gap: $spacing-3; margin-top: $spacing-6; }
   `]
 })
 export class SaleDetailsComponent implements OnInit {
@@ -126,5 +128,15 @@ export class SaleDetailsComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/sales']);
+  }
+
+  formatPaymentMethod(paymentMethod: string): string {
+    const mapping: { [key: string]: string } = {
+      'Cash': 'Cash',
+      'Card': 'Card',
+      'AcimaShortTermCredit': 'Acima Short-Term Credit',
+      'AccountsReceivable': 'Accounts Receivable'
+    };
+    return mapping[paymentMethod] || paymentMethod;
   }
 }

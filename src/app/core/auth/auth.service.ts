@@ -153,6 +153,9 @@ export class AuthService {
       case 'Supervisor':
         return Role.Supervisor;
       case 'Seller':
+        return Role.Seller;
+      case 'StoreSeller':
+        return Role.StoreSeller;
       default:
         return Role.Seller;
     }

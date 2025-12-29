@@ -1,6 +1,6 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { TransactionsService } from '../../../core/services/transactions.service';
 import { Transaction } from '../../../core/models/inventory.models';
 import { CardComponent } from '../../../shared/components/card/card.component';
@@ -11,7 +11,7 @@ import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
 @Component({
   selector: 'app-transaction-details',
   standalone: true,
-  imports: [CommonModule, CardComponent, BadgeComponent, ButtonComponent, EasternTimePipe],
+  imports: [CommonModule, RouterModule, CardComponent, BadgeComponent, ButtonComponent, EasternTimePipe],
   template: `
     <div class="transaction-details" *ngIf="transaction()">
       <div class="header">
@@ -26,6 +26,7 @@ import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
         <div class="info-grid">
           <div class="info-item"><label>Branch:</label><span>{{ transaction()!.branchCode }}</span></div>
           <div class="info-item"><label>Date:</label><span>{{ transaction()!.transactionDateUtc | easternTime:'withZone' }}</span></div>
+          <div class="info-item"><label>Payment Method:</label><span>{{ formatPaymentMethod(transaction()!.paymentMethod) || '-' }}</span></div>
           <div class="info-item"><label>Created By:</label><span>{{ transaction()!.createdBy }}</span></div>
           <div class="info-item"><label>Created At:</label><span>{{ transaction()!.createdAtUtc | easternTime:'withZone' }}</span></div>
           <div class="info-item" *ngIf="transaction()!.committedBy"><label>Committed By:</label><span>{{ transaction()!.committedBy }}</span></div>
@@ -65,6 +66,7 @@ import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
 
       <div class="actions">
         <app-button variant="secondary" (click)="goBack()">Back to Transactions</app-button>
+        <app-button variant="primary" [routerLink]="['/reports/invoice/transaction', transaction()!.id]">View Invoice</app-button>
       </div>
     </div>
   `,
@@ -82,7 +84,7 @@ import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
     .lines-table { width: 100%; border-collapse: collapse; font-size: $font-size-sm; }
     .lines-table th { padding: $spacing-3 $spacing-4; text-align: left; background-color: $color-gray-50; font-weight: $font-weight-medium; border-bottom: 1px solid $border-color-light; }
     .lines-table td { padding: $spacing-3 $spacing-4; border-bottom: 1px solid $border-color-light; }
-    .actions { display: flex; justify-content: flex-end; margin-top: $spacing-6; }
+    .actions { display: flex; justify-content: flex-end; gap: $spacing-3; margin-top: $spacing-6; }
   `]
 })
 export class TransactionDetailsComponent implements OnInit {
@@ -108,5 +110,16 @@ export class TransactionDetailsComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/transactions']);
+  }
+
+  formatPaymentMethod(paymentMethod: string | undefined): string {
+    if (!paymentMethod) return '';
+    const mapping: { [key: string]: string } = {
+      'Cash': 'Cash',
+      'Card': 'Card',
+      'AcimaShortTermCredit': 'Acima Short-Term Credit',
+      'AccountsReceivable': 'Accounts Receivable'
+    };
+    return mapping[paymentMethod] || paymentMethod;
   }
 }

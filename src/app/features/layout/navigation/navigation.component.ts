@@ -15,7 +15,9 @@ import {
   Tag,
   DollarSign,
   Users,
-  LogOut
+  LogOut,
+  FileText,
+  Activity
 } from 'lucide-angular';
 import { AuthService } from '../../../core/auth/auth.service';
 import { Role } from '../../../core/models/auth.models';
@@ -35,7 +37,7 @@ interface NavItem {
     {
       provide: LUCIDE_ICONS,
       multi: true,
-      useValue: new LucideIconProvider({ Package, ShoppingCart, Banknote, ArrowDown, ArrowUp, ClipboardList, BarChart3, Tag, DollarSign, Users, LogOut })
+      useValue: new LucideIconProvider({ Package, ShoppingCart, Banknote, ArrowDown, ArrowUp, ClipboardList, BarChart3, Tag, DollarSign, Users, LogOut, FileText, Activity })
     }
   ],
   template: `
@@ -80,13 +82,17 @@ export class NavigationComponent {
   authService = inject(AuthService);
 
   private readonly navItems: NavItem[] = [
-    // Seller & All Roles
-    { label: 'Stock', path: '/stock', icon: 'package', roles: [Role.Seller, Role.Supervisor, Role.Admin] },
-    { label: 'New Sale', path: '/sales/new', icon: 'shopping-cart', roles: [Role.Seller, Role.Supervisor, Role.Admin] },
-    { label: 'Sales', path: '/sales', icon: 'banknote', roles: [Role.Seller, Role.Supervisor, Role.Admin] },
+    // Seller, StoreSeller & All Roles
+    { label: 'Stock', path: '/stock', icon: 'package', roles: [Role.Seller, Role.Supervisor, Role.Admin, Role.StoreSeller] },
+    { label: 'New Sale', path: '/sales/new', icon: 'shopping-cart', roles: [Role.Seller, Role.Supervisor, Role.Admin, Role.StoreSeller] },
+    { label: 'Sales', path: '/sales', icon: 'banknote', roles: [Role.Seller, Role.Supervisor, Role.Admin, Role.StoreSeller] },
     { label: 'New Transaction IN', path: '/transactions/in/new', icon: 'arrow-down', roles: [Role.Seller, Role.Supervisor, Role.Admin] },
     { label: 'New Transaction OUT', path: '/transactions/out/new', icon: 'arrow-up', roles: [Role.Seller, Role.Supervisor, Role.Admin] },
     { label: 'Transactions', path: '/transactions', icon: 'clipboard-list', roles: [Role.Seller, Role.Supervisor, Role.Admin] },
+
+    // Reports (Admin Only)
+    { label: 'Stock Report', path: '/reports/stock', icon: 'file-text', roles: [Role.Admin] },
+    { label: 'Inventory Movements', path: '/reports/inventory-movements', icon: 'activity', roles: [Role.Admin] },
 
     // Admin Only
     { label: 'Dashboard', path: '/dashboard', icon: 'bar-chart-3', roles: [Role.Admin] },
