@@ -1,4 +1,4 @@
-@import 'assets/styles/variables';
+@use 'assets/styles/variables' as *;
 
 .create-sale {
   max-width: 1200px;

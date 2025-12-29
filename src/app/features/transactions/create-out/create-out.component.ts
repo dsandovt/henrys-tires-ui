@@ -8,7 +8,7 @@ import { ItemsService } from '../../../core/services/items.service';
 import { BranchesService } from '../../../core/services/branches.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
-import { ItemCondition, OutTransactionLineRequest, Item, Branch } from '../../../core/models/inventory.models';
+import { ItemCondition, OutTransactionLineRequest, Item, Branch, PaymentMethod } from '../../../core/models/inventory.models';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
@@ -78,6 +78,14 @@ interface TransactionLine {
               label="Notes (Optional)"
               placeholder="Add notes about this transaction"
             ></app-input>
+
+            <app-select
+              [(ngModel)]="paymentMethod"
+              name="paymentMethod"
+              label="Payment Method"
+              [options]="paymentMethodOptions"
+              [required]="true"
+            ></app-select>
           </div>
 
           <div class="form-section">
@@ -218,6 +226,7 @@ export class CreateOutComponent implements OnInit {
   branchCode = '';
   transactionDate = new Date().toISOString().slice(0, 16);
   notes = '';
+  paymentMethod: PaymentMethod = PaymentMethod.Cash;
   lines = signal<TransactionLine[]>([]);
   loading = signal(false);
 
@@ -241,6 +250,13 @@ export class CreateOutComponent implements OnInit {
       subtitle: item.description
     }))
   );
+
+  paymentMethodOptions: SelectOption[] = [
+    { value: PaymentMethod.Cash, label: 'Cash' },
+    { value: PaymentMethod.Card, label: 'Card' },
+    { value: PaymentMethod.AcimaShortTermCredit, label: 'Acima Short-Term Credit' },
+    { value: PaymentMethod.AccountsReceivable, label: 'Accounts Receivable' }
+  ];
 
   ngOnInit(): void {
     // Load branches and items
@@ -362,11 +378,12 @@ export class CreateOutComponent implements OnInit {
       branchCode: this.branchCode || undefined,
       transactionDateUtc: convertEasternToUtc(this.transactionDate), // Convert Eastern Time to UTC
       notes: this.notes || undefined,
+      paymentMethod: this.paymentMethod,
       lines: this.lines().map(line => ({
         itemCode: line.itemCode.trim().toUpperCase(),
         itemCondition: line.condition,
         quantity: line.quantity,
-        unitPrice: line.unitPrice || undefined,
+        unitPrice: line.unitPrice !== undefined && line.unitPrice !== null ? line.unitPrice : undefined,
         currency: line.currency || 'USD',
         priceNotes: line.priceNotes || undefined
       }))

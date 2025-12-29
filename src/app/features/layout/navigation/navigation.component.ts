@@ -1,6 +1,24 @@
 import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import {
+  LucideAngularModule,
+  LucideIconProvider,
+  LUCIDE_ICONS,
+  Package,
+  ShoppingCart,
+  Banknote,
+  ArrowDown,
+  ArrowUp,
+  ClipboardList,
+  BarChart3,
+  Tag,
+  DollarSign,
+  Users,
+  LogOut,
+  FileText,
+  Activity
+} from 'lucide-angular';
 import { AuthService } from '../../../core/auth/auth.service';
 import { Role } from '../../../core/models/auth.models';
 
@@ -14,12 +32,19 @@ interface NavItem {
 @Component({
   selector: 'app-navigation',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, LucideAngularModule],
+  providers: [
+    {
+      provide: LUCIDE_ICONS,
+      multi: true,
+      useValue: new LucideIconProvider({ Package, ShoppingCart, Banknote, ArrowDown, ArrowUp, ClipboardList, BarChart3, Tag, DollarSign, Users, LogOut, FileText, Activity })
+    }
+  ],
   template: `
     <nav class="navigation">
       <div class="nav-header">
-        <h1 class="nav-title">Henry's Tires</h1>
-        <p class="nav-subtitle">Inventory System</p>
+        <h1 class="nav-title">Henry's Tires Inc.</h1>
+        <p class="nav-subtitle">Inventory Management</p>
       </div>
 
       <div class="nav-user">
@@ -37,7 +62,7 @@ interface NavItem {
             routerLinkActive="active"
             class="nav-link"
           >
-            <span class="nav-icon">{{ item.icon }}</span>
+            <lucide-icon [name]="item.icon" class="nav-icon"></lucide-icon>
             <span class="nav-label">{{ item.label }}</span>
           </a>
         </li>
@@ -45,7 +70,7 @@ interface NavItem {
 
       <div class="nav-footer">
         <button class="logout-btn" (click)="onLogout()">
-          <span class="nav-icon">⎋</span>
+          <lucide-icon name="log-out" class="nav-icon"></lucide-icon>
           <span class="nav-label">Logout</span>
         </button>
       </div>
@@ -57,19 +82,23 @@ export class NavigationComponent {
   authService = inject(AuthService);
 
   private readonly navItems: NavItem[] = [
-    // Seller & All Roles
-    { label: 'Stock', path: '/stock', icon: '📦', roles: [Role.Seller, Role.Supervisor, Role.Admin] },
-    { label: 'New Sale', path: '/sales/new', icon: '🛒', roles: [Role.Seller, Role.Supervisor, Role.Admin] },
-    { label: 'Sales', path: '/sales', icon: '💵', roles: [Role.Seller, Role.Supervisor, Role.Admin] },
-    { label: 'New Transaction IN', path: '/transactions/in/new', icon: '⬇', roles: [Role.Seller, Role.Supervisor, Role.Admin] },
-    { label: 'New Transaction OUT', path: '/transactions/out/new', icon: '⬆', roles: [Role.Seller, Role.Supervisor, Role.Admin] },
-    { label: 'Transactions', path: '/transactions', icon: '📋', roles: [Role.Seller, Role.Supervisor, Role.Admin] },
+    // Seller, StoreSeller & All Roles
+    { label: 'Stock', path: '/stock', icon: 'package', roles: [Role.Seller, Role.Supervisor, Role.Admin, Role.StoreSeller] },
+    { label: 'New Sale', path: '/sales/new', icon: 'shopping-cart', roles: [Role.Seller, Role.Supervisor, Role.Admin, Role.StoreSeller] },
+    { label: 'Sales', path: '/sales', icon: 'banknote', roles: [Role.Seller, Role.Supervisor, Role.Admin, Role.StoreSeller] },
+    { label: 'New Transaction IN', path: '/transactions/in/new', icon: 'arrow-down', roles: [Role.Seller, Role.Supervisor, Role.Admin] },
+    { label: 'New Transaction OUT', path: '/transactions/out/new', icon: 'arrow-up', roles: [Role.Seller, Role.Supervisor, Role.Admin] },
+    { label: 'Transactions', path: '/transactions', icon: 'clipboard-list', roles: [Role.Seller, Role.Supervisor, Role.Admin] },
+
+    // Reports (Admin Only)
+    { label: 'Stock Report', path: '/reports/stock', icon: 'file-text', roles: [Role.Admin] },
+    { label: 'Inventory Movements', path: '/reports/inventory-movements', icon: 'activity', roles: [Role.Admin] },
 
     // Admin Only
-    { label: 'Dashboard', path: '/dashboard', icon: '📊', roles: [Role.Admin] },
-    { label: 'Items', path: '/admin/items', icon: '🏷️', roles: [Role.Admin] },
-    { label: 'Prices', path: '/admin/prices', icon: '💰', roles: [Role.Admin] },
-    { label: 'Users', path: '/admin/users', icon: '👥', roles: [Role.Admin] }
+    { label: 'Dashboard', path: '/dashboard', icon: 'bar-chart-3', roles: [Role.Admin] },
+    { label: 'Items', path: '/admin/items', icon: 'tag', roles: [Role.Admin] },
+    { label: 'Prices', path: '/admin/prices', icon: 'dollar-sign', roles: [Role.Admin] },
+    { label: 'Users', path: '/admin/users', icon: 'users', roles: [Role.Admin] }
   ];
 
   visibleNavItems = computed(() => {

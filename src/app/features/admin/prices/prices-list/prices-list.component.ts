@@ -61,7 +61,7 @@ import { PriceFormModalComponent } from '../price-form-modal/price-form-modal.co
     </div>
   `,
   styles: [`
-    @import 'assets/styles/variables';
+    @use 'assets/styles/variables' as *;
     .prices-list { display: flex; flex-direction: column; gap: $spacing-6; }
     .page-header { display: flex; gap: $spacing-4; }
     .table-container { overflow-x: auto; }

@@ -1,5 +1,5 @@
 // Development environment
 export const environment = {
   production: false,
-  apiUrl: '/api', // Uses proxy in development
+  apiUrl: 'http://localhost:5099/api', // Uses proxy in development
 };

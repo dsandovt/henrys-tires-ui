@@ -32,7 +32,7 @@ export interface CreateItemRequest {
   size?: string;
   notes?: string;
   initialPrice?: number;
-  currency?: string;
+  currency?: Currency;
 }
 
 export interface UpdateItemRequest {
@@ -47,7 +47,7 @@ export interface ConsumableItemPrice {
   id: string;
   itemCode: string;
   latestPrice: number;
-  currency: string;
+  currency: Currency;
   latestPriceDateUtc: string;
   updatedBy: string;
   priceHistory?: PriceHistoryEntry[];
@@ -55,7 +55,7 @@ export interface ConsumableItemPrice {
 
 export interface PriceHistoryEntry {
   price: number;
-  currency: string;
+  currency: Currency;
   changedAtUtc: string;
   changedBy: string;
 }
@@ -63,12 +63,17 @@ export interface PriceHistoryEntry {
 export interface UpdatePriceRequest {
   itemCode: string;
   newPrice: number;
-  currency?: string;
+  currency?: Currency;
 }
 
 // ----------------------------------------------------------------------------
 // Transaction Models
 // ----------------------------------------------------------------------------
+
+export enum Currency {
+  USD = 'USD',
+  DOP = 'DOP'
+}
 
 export enum TransactionType {
   In = 'In',
@@ -96,6 +101,13 @@ export enum PriceSource {
   AverageCost = 'AverageCost'
 }
 
+export enum PaymentMethod {
+  Cash = 'Cash',
+  Card = 'Card',
+  AcimaShortTermCredit = 'AcimaShortTermCredit',
+  AccountsReceivable = 'AccountsReceivable'
+}
+
 export interface Transaction {
   id: string;
   transactionNumber: string;
@@ -104,6 +116,7 @@ export interface Transaction {
   status: TransactionStatus;
   transactionDateUtc: string;
   notes?: string;
+  paymentMethod?: PaymentMethod;
   committedAtUtc?: string;
   committedBy?: string;
   lines: TransactionLine[];
@@ -119,7 +132,7 @@ export interface TransactionLine {
   itemCondition: string; // Changed from 'condition' to match backend DTO 'ItemCondition'
   quantity: number;
   unitPrice: number;
-  currency: string;
+  currency: Currency;
   priceSource: string;
   priceSetByRole: string;
   priceSetByUser: string;
@@ -133,6 +146,7 @@ export interface CreateInTransactionRequest {
   branchCode?: string;
   transactionDateUtc: string;
   notes?: string;
+  paymentMethod?: PaymentMethod;
   lines: InTransactionLineRequest[];
 }
 
@@ -141,7 +155,7 @@ export interface InTransactionLineRequest {
   itemCondition: ItemCondition;
   quantity: number;
   unitPrice?: number;
-  currency?: string;
+  currency?: Currency;
   priceNotes?: string;
 }
 
@@ -149,6 +163,7 @@ export interface CreateOutTransactionRequest {
   branchCode?: string;
   transactionDateUtc: string;
   notes?: string;
+  paymentMethod?: PaymentMethod;
   lines: OutTransactionLineRequest[];
 }
 
@@ -157,7 +172,7 @@ export interface OutTransactionLineRequest {
   itemCondition: ItemCondition;
   quantity: number;
   unitPrice?: number;
-  currency?: string;
+  currency?: Currency;
   priceNotes?: string;
 }
 
@@ -173,7 +188,7 @@ export interface AdjustTransactionLineRequest {
   itemCondition: ItemCondition;
   newQuantity: number;
   unitPrice?: number;
-  currency?: string;
+  currency?: Currency;
   priceNotes?: string;
 }
 
@@ -259,6 +274,7 @@ export interface Sale {
   customerName?: string;
   customerPhone?: string;
   notes?: string;
+  paymentMethod: PaymentMethod;
   status: TransactionStatus;
   postedAtUtc?: string;
   postedBy?: string;
@@ -277,7 +293,7 @@ export interface SaleLine {
   condition?: ItemCondition;
   quantity: number;
   unitPrice: number;
-  currency: string;
+  currency: Currency;
   lineTotal: number;
   inventoryTransactionId?: string;
 }
@@ -289,6 +305,7 @@ export interface CreateSaleRequest {
   customerName?: string;
   customerPhone?: string;
   notes?: string;
+  paymentMethod: PaymentMethod;
 }
 
 export interface CreateSaleLineRequest {
@@ -299,7 +316,7 @@ export interface CreateSaleLineRequest {
   condition?: ItemCondition;
   quantity: number;
   unitPrice: number;
-  currency: string;
+  currency: Currency;
 }
 
 export interface SaleListResponse {

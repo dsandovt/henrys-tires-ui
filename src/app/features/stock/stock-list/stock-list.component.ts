@@ -7,6 +7,7 @@ import { InventoryService } from '../../../core/services/inventory.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { BranchesService } from '../../../core/services/branches.service';
 import { InventorySummary, ItemCondition, Branch } from '../../../core/models/inventory.models';
+import { Role } from '../../../core/models/auth.models';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
@@ -49,7 +50,7 @@ import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.
             </select>
           </div>
 
-          <div class="action-buttons">
+          <div class="action-buttons" *ngIf="canCreateTransactions()">
             <app-button
               variant="primary"
               routerLink="/transactions/in/new"
@@ -178,6 +179,11 @@ export class StockListComponent implements OnInit, OnDestroy {
   emptyMessage = computed(() =>
     this.searchQuery ? `No items found matching "${this.searchQuery}"` : 'No stock items available'
   );
+
+  canCreateTransactions = computed(() => {
+    const userRole = this.authService.userRole();
+    return userRole !== Role.StoreSeller;
+  });
 
   ngOnInit(): void {
     // Set up debounced search

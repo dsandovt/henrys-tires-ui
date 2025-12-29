@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, ViewChild, signal, inject } from '@angular/core';
+import { Component, EventEmitter, Output, ViewChild, Input, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ModalComponent } from '../../../../shared/components/modal/modal.component';
@@ -7,7 +7,7 @@ import { ButtonComponent } from '../../../../shared/components/button/button.com
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { UsersService } from '../../../../core/services/users.service';
 import { ToastService } from '../../../../shared/components/toast/toast.service';
-import { User } from '../../../../core/models/inventory.models';
+import { User, Branch } from '../../../../core/models/inventory.models';
 
 @Component({
   selector: 'app-user-form-modal',
@@ -72,19 +72,24 @@ import { User } from '../../../../core/models/inventory.models';
             <option value="Admin">Admin</option>
             <option value="Supervisor">Supervisor</option>
             <option value="Seller">Seller</option>
+            <option value="StoreSeller">StoreSeller</option>
           </select>
           <span *ngIf="roleError()" class="error-text">{{ roleError() }}</span>
         </div>
 
         <div class="form-group">
-          <app-input
+          <label class="form-label">Branch</label>
+          <select
             [(ngModel)]="branchId"
             name="branchId"
-            label="Branch ID"
-            type="text"
-            placeholder="Enter branch ID (optional)"
-            hint="Leave blank for users without branch assignment"
-          ></app-input>
+            class="form-select"
+          >
+            <option value="">No branch assigned</option>
+            <option *ngFor="let branch of branches()" [value]="branch.id">
+              {{ branch.name }} ({{ branch.code }})
+            </option>
+          </select>
+          <p class="hint-text">Required for StoreSeller users</p>
         </div>
 
         <div class="form-group">
@@ -197,6 +202,7 @@ import { User } from '../../../../core/models/inventory.models';
 export class UserFormModalComponent {
   @ViewChild('modal') modal!: ModalComponent;
   @Output() userSaved = new EventEmitter<User>();
+  @Input() branches = signal<Branch[]>([]);
 
   private usersService = inject(UsersService);
   private toastService = inject(ToastService);

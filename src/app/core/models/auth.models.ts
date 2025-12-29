@@ -5,7 +5,8 @@
 export enum Role {
   Seller = 'Seller',
   Supervisor = 'Supervisor',
-  Admin = 'Admin'
+  Admin = 'Admin',
+  StoreSeller = 'StoreSeller'
 }
 
 export interface LoginRequest {

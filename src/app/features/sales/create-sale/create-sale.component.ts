@@ -8,7 +8,7 @@ import { ItemsService } from '../../../core/services/items.service';
 import { BranchesService } from '../../../core/services/branches.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
-import { ItemCondition, Item, Branch, CreateSaleLineRequest } from '../../../core/models/inventory.models';
+import { ItemCondition, Item, Branch, CreateSaleLineRequest, Currency, PaymentMethod } from '../../../core/models/inventory.models';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
@@ -49,6 +49,7 @@ export class CreateSaleComponent implements OnInit {
   customerName = '';
   customerPhone = '';
   notes = '';
+  paymentMethod: PaymentMethod = PaymentMethod.Cash;
   lines = signal<SaleLineForm[]>([]);
   loading = signal(false);
 
@@ -70,6 +71,13 @@ export class CreateSaleComponent implements OnInit {
       subtitle: `${item.description} [${item.classification}]`
     }))
   );
+
+  paymentMethodOptions: SelectOption[] = [
+    { value: PaymentMethod.Cash, label: 'Cash' },
+    { value: PaymentMethod.Card, label: 'Card' },
+    { value: PaymentMethod.AcimaShortTermCredit, label: 'Acima Short-Term Credit' },
+    { value: PaymentMethod.AccountsReceivable, label: 'Accounts Receivable' }
+  ];
 
   ngOnInit(): void {
     this.loadBranches();
@@ -102,7 +110,7 @@ export class CreateSaleComponent implements OnInit {
         condition: ItemCondition.New,
         quantity: 1,
         unitPrice: 0,
-        currency: 'USD',
+        currency: Currency.USD,
         availableStock: undefined
       }
     ]);
@@ -226,7 +234,8 @@ export class CreateSaleComponent implements OnInit {
       })),
       customerName: this.customerName || undefined,
       customerPhone: this.customerPhone || undefined,
-      notes: this.notes || undefined
+      notes: this.notes || undefined,
+      paymentMethod: this.paymentMethod
     };
 
     this.salesService.createSale(request).subscribe({

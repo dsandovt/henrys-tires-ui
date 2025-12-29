@@ -71,7 +71,7 @@ import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
     </div>
   `,
   styles: [`
-    @import 'assets/styles/variables';
+    @use 'assets/styles/variables' as *;
 
     .sales-list {
       max-width: 1400px;

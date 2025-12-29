@@ -2,6 +2,13 @@
 // Common API Models
 // ============================================================================
 
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  errorMessage?: string;
+  developerMessage?: string;
+}
+
 export interface ApiError {
   message: string;
   errors?: Record<string, string[]>;

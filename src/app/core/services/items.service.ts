@@ -49,7 +49,7 @@ export class ItemsService {
    */
   getItemByCode(code: string): Observable<Item> {
     return this.http
-      .get<{ success: boolean; data: Item }>(`${this.API_URL}/code/${code}`)
+      .get<{ success: boolean; data: Item }>(`${this.API_URL}/code/${encodeURIComponent(code)}`)
       .pipe(map((response) => response.data));
   }
 
@@ -76,7 +76,7 @@ export class ItemsService {
    */
   updateItem(itemCode: string, request: UpdateItemRequest): Observable<Item> {
     return this.http
-      .put<{ success: boolean; data: Item }>(`${this.API_URL}/${itemCode}`, request)
+      .put<{ success: boolean; data: Item }>(`${this.API_URL}/${encodeURIComponent(itemCode)}`, request)
       .pipe(map((response) => response.data));
   }
 
@@ -85,7 +85,7 @@ export class ItemsService {
    */
   deleteItem(itemCode: string): Observable<string> {
     return this.http
-      .delete<{ success: boolean; data: string }>(`${this.API_URL}/${itemCode}`)
+      .delete<{ success: boolean; data: string }>(`${this.API_URL}/${encodeURIComponent(itemCode)}`)
       .pipe(map((response) => response.data));
   }
 }
