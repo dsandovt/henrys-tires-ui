@@ -112,7 +112,7 @@ import { LucideAngularModule, FileText, LucideIconProvider, LUCIDE_ICONS } from 
               <span>{{ getCurrency() }} {{ totals.taxableBase | number:'1.2-2' }}</span>
             </div>
             <div class="totals-row" *ngIf="totals.salesTaxAmount > 0">
-              <span>Sales Tax ({{ totals.salesTaxRate * 100 }}%):</span>
+              <span>Sales Tax ({{ (totals.salesTaxRate * 100).toFixed(0) }}%):</span>
               <span>{{ getCurrency() }} {{ totals.salesTaxAmount | number:'1.2-2' }}</span>
             </div>
             <div class="totals-row" *ngIf="totals.discount > 0">
