@@ -75,7 +75,7 @@ import { LucideAngularModule, FileText, LucideIconProvider, LUCIDE_ICONS } from 
                   <th class="number">Qty</th>
                   <th class="number">Unit Price</th>
                   <th class="number">Total</th>
-                  <th class="center">T/F</th>
+                  <th class="center">Taxable</th>
                 </tr>
               </thead>
               <tbody>
@@ -87,9 +87,8 @@ import { LucideAngularModule, FileText, LucideIconProvider, LUCIDE_ICONS } from 
                   <td class="number">{{ line.currency }} {{ line.unitPrice | number:'1.2-2' }}</td>
                   <td class="number">{{ line.currency }} {{ line.lineTotal | number:'1.2-2' }}</td>
                   <td class="center">
-                    <span *ngIf="line.isTaxable || line.appliesShopFee">
-                      {{ line.isTaxable ? 'T' : '' }}{{ line.isTaxable && line.appliesShopFee ? ',' : '' }}{{ line.appliesShopFee ? 'F' : '' }}
-                    </span>
+                    <span *ngIf="line.isTaxable">Yes</span>
+                    <span *ngIf="!line.isTaxable">No</span>
                   </td>
                 </tr>
               </tbody>
@@ -115,14 +114,6 @@ import { LucideAngularModule, FileText, LucideIconProvider, LUCIDE_ICONS } from 
             <div class="totals-row" *ngIf="totals.salesTaxAmount > 0">
               <span>Sales Tax ({{ totals.salesTaxRate * 100 }}%):</span>
               <span>{{ getCurrency() }} {{ totals.salesTaxAmount | number:'1.2-2' }}</span>
-            </div>
-            <div class="totals-row" *ngIf="totals.shopFeeBase > 0">
-              <span>Shop Fee Base:</span>
-              <span>{{ getCurrency() }} {{ totals.shopFeeBase | number:'1.2-2' }}</span>
-            </div>
-            <div class="totals-row" *ngIf="totals.shopFeeAmount > 0">
-              <span>Shop Fee ({{ totals.shopFeeRate * 100 }}%):</span>
-              <span>{{ getCurrency() }} {{ totals.shopFeeAmount | number:'1.2-2' }}</span>
             </div>
             <div class="totals-row" *ngIf="totals.discount > 0">
               <span>Discount:</span>
