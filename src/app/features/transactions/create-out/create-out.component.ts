@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, inject, signal, OnInit, computed, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -14,6 +14,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { SelectComponent, SelectOption } from '../../../shared/components/select/select.component';
 import { AlertComponent } from '../../../shared/components/alert/alert.component';
+import { ConfirmationModalComponent, ConfirmationData, ConfirmationItem } from '../../../shared/components/confirmation-modal/confirmation-modal.component';
 import { convertEasternToUtc } from '../../../core/utils/timezone.utils';
 
 interface TransactionLine {
@@ -36,7 +37,8 @@ interface TransactionLine {
     ButtonComponent,
     InputComponent,
     SelectComponent,
-    AlertComponent
+    AlertComponent,
+    ConfirmationModalComponent
   ],
   template: `
     <div class="create-transaction">
@@ -210,6 +212,14 @@ interface TransactionLine {
           </div>
         </form>
       </app-card>
+
+      <!-- Confirmation Modal -->
+      <app-confirmation-modal
+        [open]="isModalOpen()"
+        [confirmationData]="confirmationData()"
+        (confirm)="onConfirmModal()"
+        (cancel)="onCancelModal()"
+      ></app-confirmation-modal>
     </div>
   `,
   styleUrls: ['./create-out.component.scss']
@@ -233,6 +243,11 @@ export class CreateOutComponent implements OnInit {
   // Data for dropdowns
   branches = signal<Branch[]>([]);
   items = signal<Item[]>([]);
+
+  // Confirmation modal state
+  @ViewChild(ConfirmationModalComponent) confirmationModal?: ConfirmationModalComponent;
+  isModalOpen = signal(false);
+  confirmationData = signal<ConfirmationData | null>(null);
 
   // Computed options for selects
   branchOptions = computed<SelectOption[]>(() =>
@@ -372,11 +387,52 @@ export class CreateOutComponent implements OnInit {
       return;
     }
 
-    this.loading.set(true);
+    // Prepare confirmation data
+    const branch = this.branches().find(b => b.code === this.branchCode);
+    const branchName = branch?.name || this.authService.branchCode() || 'Default';
 
+    const confirmationItems: ConfirmationItem[] = this.lines().map(line => {
+      const item = this.items().find(i => i.itemCode === line.itemCode);
+      return {
+        sku: line.itemCode,
+        description: item?.description || line.itemCode,
+        quantity: line.quantity,
+        price: line.unitPrice,
+        currency: line.currency,
+        condition: line.condition === ItemCondition.New ? 'New' : 'Used'
+      };
+    });
+
+    const totalAmount = this.lines().reduce((sum, line) => sum + (line.unitPrice || 0) * line.quantity, 0);
+    const hasPrices = this.lines().some(line => line.unitPrice !== undefined && line.unitPrice > 0);
+
+    this.confirmationData.set({
+      type: 'Transfer Out',
+      branch: branchName,
+      items: confirmationItems,
+      totalItems: this.lines().length,
+      totalQuantity: this.lines().reduce((sum, line) => sum + line.quantity, 0),
+      totalAmount: hasPrices ? totalAmount : undefined,
+      currency: this.lines()[0]?.currency || 'USD',
+      paymentMethod: this.getPaymentMethodLabel(this.paymentMethod),
+      notes: this.notes || undefined
+    });
+
+    this.isModalOpen.set(true);
+  }
+
+  onConfirmModal(): void {
+    this.executeSubmit();
+  }
+
+  onCancelModal(): void {
+    this.isModalOpen.set(false);
+  }
+
+  private executeSubmit(): void {
     const request: any = {
       branchCode: this.branchCode || undefined,
-      transactionDateUtc: convertEasternToUtc(this.transactionDate), // Convert Eastern Time to UTC
+      transactionDateUtc: convertEasternToUtc(this.transactionDate),
       notes: this.notes || undefined,
       paymentMethod: this.paymentMethod,
       lines: this.lines().map(line => ({
@@ -391,18 +447,21 @@ export class CreateOutComponent implements OnInit {
 
     this.transactionsService.createOutTransaction(request).subscribe({
       next: (transaction) => {
-        this.loading.set(false);
         this.toastService.success('Transfer OUT transaction created successfully');
+        this.confirmationModal?.close();
         this.commitTransaction(transaction.id);
       },
       error: (err) => {
-        this.loading.set(false);
         console.error('Failed to create transaction:', err);
-        this.toastService.danger(
-          err.error?.message || 'Failed to create transaction. Please try again.'
-        );
+        const errorMessage = err.error?.message || 'Failed to create transaction. Please try again.';
+        this.confirmationModal?.setError(errorMessage);
       }
     });
+  }
+
+  private getPaymentMethodLabel(method: PaymentMethod): string {
+    const option = this.paymentMethodOptions.find(opt => opt.value === method);
+    return option?.label || method.toString();
   }
 
   commitTransaction(transactionId: string): void {

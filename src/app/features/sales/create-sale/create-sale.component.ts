@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, inject, signal, OnInit, computed, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -14,6 +14,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { SelectComponent, SelectOption } from '../../../shared/components/select/select.component';
 import { AlertComponent } from '../../../shared/components/alert/alert.component';
+import { ConfirmationModalComponent, ConfirmationData, ConfirmationItem } from '../../../shared/components/confirmation-modal/confirmation-modal.component';
 import { convertEasternToUtc } from '../../../core/utils/timezone.utils';
 
 interface SaleLineForm extends CreateSaleLineRequest {
@@ -30,7 +31,8 @@ interface SaleLineForm extends CreateSaleLineRequest {
     ButtonComponent,
     InputComponent,
     SelectComponent,
-    AlertComponent
+    AlertComponent,
+    ConfirmationModalComponent
   ],
   templateUrl: './create-sale.component.html',
   styleUrls: ['./create-sale.component.scss']
@@ -55,6 +57,11 @@ export class CreateSaleComponent implements OnInit {
 
   branches = signal<Branch[]>([]);
   items = signal<Item[]>([]);
+
+  // Confirmation modal state
+  @ViewChild(ConfirmationModalComponent) confirmationModal?: ConfirmationModalComponent;
+  isModalOpen = signal(false);
+  confirmationData = signal<ConfirmationData | null>(null);
 
   branchOptions = computed<SelectOption[]>(() =>
     this.branches().map(branch => ({
@@ -217,8 +224,45 @@ export class CreateSaleComponent implements OnInit {
       return;
     }
 
-    this.loading.set(true);
+    // Prepare confirmation data
+    const branch = this.branches().find(b => b.id === this.branchId);
+    const branchName = branch?.name || this.authService.branchCode() || 'Default';
 
+    const confirmationItems: ConfirmationItem[] = this.lines().map(line => ({
+      sku: line.itemCode,
+      description: line.description,
+      quantity: line.quantity,
+      price: line.unitPrice,
+      currency: line.currency.toString(),
+      condition: line.condition !== undefined ? (line.condition === ItemCondition.New ? 'New' : 'Used') : undefined
+    }));
+
+    const totalAmount = this.lines().reduce((sum, line) => sum + this.calculateLineTotal(line), 0);
+
+    this.confirmationData.set({
+      type: 'Sale',
+      branch: branchName,
+      items: confirmationItems,
+      totalItems: this.lines().length,
+      totalQuantity: this.lines().reduce((sum, line) => sum + line.quantity, 0),
+      totalAmount: totalAmount,
+      currency: this.lines()[0]?.currency.toString() || 'USD',
+      paymentMethod: this.getPaymentMethodLabel(this.paymentMethod),
+      notes: this.notes || undefined
+    });
+
+    this.isModalOpen.set(true);
+  }
+
+  onConfirmModal(): void {
+    this.executeSubmit();
+  }
+
+  onCancelModal(): void {
+    this.isModalOpen.set(false);
+  }
+
+  private executeSubmit(): void {
     const request = {
       branchId: this.branchId || undefined,
       saleDateUtc: convertEasternToUtc(this.saleDate),
@@ -240,18 +284,21 @@ export class CreateSaleComponent implements OnInit {
 
     this.salesService.createSale(request).subscribe({
       next: (sale) => {
-        this.loading.set(false);
         this.toastService.success('Sale created successfully');
+        this.confirmationModal?.close();
         this.postSale(sale.id);
       },
       error: (err) => {
-        this.loading.set(false);
         console.error('Failed to create sale:', err);
-        this.toastService.danger(
-          err.error?.message || 'Failed to create sale. Please try again.'
-        );
+        const errorMessage = err.error?.message || 'Failed to create sale. Please try again.';
+        this.confirmationModal?.setError(errorMessage);
       }
     });
+  }
+
+  private getPaymentMethodLabel(method: PaymentMethod): string {
+    const option = this.paymentMethodOptions.find(opt => opt.value === method);
+    return option?.label || method.toString();
   }
 
   postSale(saleId: string): void {

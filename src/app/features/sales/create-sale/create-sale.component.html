@@ -182,4 +182,12 @@
       </div>
     </form>
   </app-card>
+
+  <!-- Confirmation Modal -->
+  <app-confirmation-modal
+    [open]="isModalOpen()"
+    [confirmationData]="confirmationData()"
+    (confirm)="onConfirmModal()"
+    (cancel)="onCancelModal()"
+  ></app-confirmation-modal>
 </div>
