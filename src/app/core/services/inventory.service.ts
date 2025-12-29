@@ -37,12 +37,13 @@ export class InventoryService {
   ): Observable<InventorySummary> {
     let httpParams = new HttpParams();
     httpParams = httpParams.set('branchCode', branchCode);
+    httpParams = httpParams.set('itemCode', itemCode);
 
     return this.http
       .get<{
         success: boolean;
         data: InventorySummary;
-      }>(`${this.API_URL}/${itemCode}`, { params: httpParams })
+      }>(`${this.API_URL}-summary`, { params: httpParams })
       .pipe(map((response) => response.data));
   }
 }

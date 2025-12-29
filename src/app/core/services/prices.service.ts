@@ -49,7 +49,7 @@ export class PricesService {
    * Get price by item code
    */
   getPriceByItemCode(itemCode: string): Observable<ConsumableItemPrice> {
-    return this.http.get<{ success: boolean; data: ConsumableItemPrice }>(`${this.API_URL}/${itemCode}`).pipe(
+    return this.http.get<{ success: boolean; data: ConsumableItemPrice }>(`${this.API_URL}/${encodeURIComponent(itemCode)}`).pipe(
       map(response => response.data)
     );
   }
@@ -58,7 +58,7 @@ export class PricesService {
    * Update price for item (by itemCode)
    */
   updatePrice(itemCode: string, request: UpdatePriceRequest): Observable<ConsumableItemPrice> {
-    return this.http.put<{ success: boolean; data: ConsumableItemPrice }>(`${this.API_URL}/${itemCode}`, request).pipe(
+    return this.http.put<{ success: boolean; data: ConsumableItemPrice }>(`${this.API_URL}/${encodeURIComponent(itemCode)}`, request).pipe(
       map(response => response.data)
     );
   }
