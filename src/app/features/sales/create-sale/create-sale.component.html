@@ -12,12 +12,13 @@
         <div class="form-row">
           <app-select
             *ngIf="authService.isAdmin()"
-            [(ngModel)]="branchId"
-            name="branchId"
+            [(ngModel)]="branchCode"
+            name="branchCode"
             label="Branch"
             placeholder="Select branch or leave empty for default"
             [options]="branchOptions()"
             hint="Leave empty to use your assigned branch"
+            (selectionChange)="onBranchChanged()"
           ></app-select>
 
           <app-input

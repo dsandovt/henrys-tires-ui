@@ -299,7 +299,7 @@ export interface SaleLine {
 }
 
 export interface CreateSaleRequest {
-  branchId?: string;
+  branchCode?: string;
   saleDateUtc: string;
   lines: CreateSaleLineRequest[];
   customerName?: string;
