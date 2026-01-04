@@ -46,7 +46,7 @@ export class CreateSaleComponent implements OnInit {
   private toastService = inject(ToastService);
   authService = inject(AuthService);
 
-  branchId = '';
+  branchCode = '';
   saleDate = new Date().toISOString().slice(0, 16);
   customerName = '';
   customerPhone = '';
@@ -65,7 +65,7 @@ export class CreateSaleComponent implements OnInit {
 
   branchOptions = computed<SelectOption[]>(() =>
     this.branches().map(branch => ({
-      value: branch.id,
+      value: branch.code,
       label: branch.name,
       subtitle: branch.code
     }))
@@ -151,6 +151,13 @@ export class CreateSaleComponent implements OnInit {
     }
   }
 
+  onBranchChanged(): void {
+    // Re-check stock for all lines when branch changes
+    this.lines().forEach((_, index) => {
+      this.checkStock(index);
+    });
+  }
+
   checkStock(index: number): void {
     const line = this.lines()[index];
 
@@ -158,7 +165,7 @@ export class CreateSaleComponent implements OnInit {
       return;
     }
 
-    const branchCode = this.authService.branchCode();
+    const branchCode = this.branchCode || this.authService.branchCode();
     if (!branchCode) {
       return;
     }
@@ -225,7 +232,7 @@ export class CreateSaleComponent implements OnInit {
     }
 
     // Prepare confirmation data
-    const branch = this.branches().find(b => b.id === this.branchId);
+    const branch = this.branches().find(b => b.code === this.branchCode);
     const branchName = branch?.name || this.authService.branchCode() || 'Default';
 
     const confirmationItems: ConfirmationItem[] = this.lines().map(line => ({
@@ -264,7 +271,7 @@ export class CreateSaleComponent implements OnInit {
 
   private executeSubmit(): void {
     const request = {
-      branchId: this.branchId || undefined,
+      branchCode: this.branchCode || undefined,
       saleDateUtc: convertEasternToUtc(this.saleDate),
       lines: this.lines().map(line => ({
         itemId: line.itemId,
