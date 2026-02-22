@@ -270,8 +270,8 @@ export class DashboardComponent implements OnInit {
     if (this.isAdmin()) {
       this.loadBranches();
     } else {
-      // Non-admin users see only their branch (use branchId as the backend expects the MongoDB ID)
-      this.selectedBranchCode = this.authService.branchId() || null;
+      // Non-admin users see only their branch
+      this.selectedBranchCode = this.authService.branchCode() || null;
     }
   }
 
@@ -324,7 +324,10 @@ export class DashboardComponent implements OnInit {
   }
 
   onActivityClick(activity: RecentActivityItem): void {
-    // Navigate to transaction details
-    this.router.navigate(['/admin/transactions', activity.id]);
+    if (activity.type === 'Sale') {
+      this.router.navigate(['/sales', activity.id]);
+    } else {
+      this.router.navigate(['/transactions', activity.id]);
+    }
   }
 }

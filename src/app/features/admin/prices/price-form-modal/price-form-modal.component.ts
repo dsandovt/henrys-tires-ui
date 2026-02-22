@@ -8,6 +8,7 @@ import { AlertComponent } from '../../../../shared/components/alert/alert.compon
 import { PricesService } from '../../../../core/services/prices.service';
 import { ToastService } from '../../../../shared/components/toast/toast.service';
 import { ConsumableItemPrice, Currency } from '../../../../core/models/inventory.models';
+import { formatEasternTimeShort } from '../../../../core/utils/timezone.utils';
 
 @Component({
   selector: 'app-price-form-modal',
@@ -280,14 +281,7 @@ export class PriceFormModalComponent {
   }
 
   formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return formatEasternTimeShort(dateString);
   }
 
   private resetForm(): void {

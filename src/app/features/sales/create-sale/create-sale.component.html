@@ -53,13 +53,10 @@
           placeholder="Add notes about this sale"
         ></app-input>
 
-        <app-select
-          [(ngModel)]="paymentMethod"
-          name="paymentMethod"
-          label="Payment Method"
-          [options]="paymentMethodOptions"
-          [required]="true"
-        ></app-select>
+        <app-payment-method-selector
+          [paymentDetails]="paymentDetails()"
+          (paymentDetailsChange)="onPaymentDetailsChange($event)"
+        ></app-payment-method-selector>
       </div>
 
       <div class="form-section">

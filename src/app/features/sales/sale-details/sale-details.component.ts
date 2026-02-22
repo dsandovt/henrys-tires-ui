@@ -26,7 +26,16 @@ import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
         <div class="info-grid">
           <div class="info-item"><label>Branch ID:</label><span>{{ sale()!.branchId }}</span></div>
           <div class="info-item"><label>Date:</label><span>{{ sale()!.saleDateUtc | easternTime:'withZone' }}</span></div>
-          <div class="info-item"><label>Payment Method:</label><span>{{ formatPaymentMethod(sale()!.paymentMethod) }}</span></div>
+          <div class="info-item">
+            <label>Payment Method:</label>
+            <span *ngIf="!sale()!.paymentDetails || sale()!.paymentDetails!.length === 0">{{ formatPaymentMethod(sale()!.paymentMethod) }}</span>
+            <div *ngIf="sale()!.paymentDetails && sale()!.paymentDetails!.length > 0">
+              <div *ngFor="let pd of sale()!.paymentDetails">
+                {{ formatPaymentMethod(pd.method) }}: {{ pd.amount | number:'1.2-2' }}
+                <span *ngIf="pd.checkNumber"> (Check #{{ pd.checkNumber }})</span>
+              </div>
+            </div>
+          </div>
           <div class="info-item" *ngIf="sale()!.customerName"><label>Customer:</label><span>{{ sale()!.customerName }}</span></div>
           <div class="info-item" *ngIf="sale()!.customerPhone"><label>Phone:</label><span>{{ sale()!.customerPhone }}</span></div>
           <div class="info-item"><label>Created By:</label><span>{{ sale()!.createdBy }}</span></div>
@@ -135,7 +144,8 @@ export class SaleDetailsComponent implements OnInit {
       'Cash': 'Cash',
       'Card': 'Card',
       'AcimaShortTermCredit': 'Acima Short-Term Credit',
-      'AccountsReceivable': 'Accounts Receivable'
+      'AccountsReceivable': 'Accounts Receivable',
+      'Check': 'Check'
     };
     return mapping[paymentMethod] || paymentMethod;
   }

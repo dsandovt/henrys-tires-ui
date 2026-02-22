@@ -26,7 +26,16 @@ import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
         <div class="info-grid">
           <div class="info-item"><label>Branch:</label><span>{{ transaction()!.branchCode }}</span></div>
           <div class="info-item"><label>Date:</label><span>{{ transaction()!.transactionDateUtc | easternTime:'withZone' }}</span></div>
-          <div class="info-item"><label>Payment Method:</label><span>{{ formatPaymentMethod(transaction()!.paymentMethod) || '-' }}</span></div>
+          <div class="info-item">
+            <label>Payment Method:</label>
+            <span *ngIf="!transaction()!.paymentDetails || transaction()!.paymentDetails!.length === 0">{{ formatPaymentMethod(transaction()!.paymentMethod) || '-' }}</span>
+            <div *ngIf="transaction()!.paymentDetails && transaction()!.paymentDetails!.length > 0">
+              <div *ngFor="let pd of transaction()!.paymentDetails">
+                {{ formatPaymentMethod(pd.method) }}: {{ pd.amount | number:'1.2-2' }}
+                <span *ngIf="pd.checkNumber"> (Check #{{ pd.checkNumber }})</span>
+              </div>
+            </div>
+          </div>
           <div class="info-item"><label>Created By:</label><span>{{ transaction()!.createdBy }}</span></div>
           <div class="info-item"><label>Created At:</label><span>{{ transaction()!.createdAtUtc | easternTime:'withZone' }}</span></div>
           <div class="info-item" *ngIf="transaction()!.committedBy"><label>Committed By:</label><span>{{ transaction()!.committedBy }}</span></div>
@@ -118,7 +127,8 @@ export class TransactionDetailsComponent implements OnInit {
       'Cash': 'Cash',
       'Card': 'Card',
       'AcimaShortTermCredit': 'Acima Short-Term Credit',
-      'AccountsReceivable': 'Accounts Receivable'
+      'AccountsReceivable': 'Accounts Receivable',
+      'Check': 'Check'
     };
     return mapping[paymentMethod] || paymentMethod;
   }

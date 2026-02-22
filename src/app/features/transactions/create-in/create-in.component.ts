@@ -7,13 +7,14 @@ import { ItemsService } from '../../../core/services/items.service';
 import { BranchesService } from '../../../core/services/branches.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
-import { ItemCondition, InTransactionLineRequest, Item, Branch, PaymentMethod } from '../../../core/models/inventory.models';
+import { ItemCondition, InTransactionLineRequest, Item, Branch, PaymentMethod, PaymentDetail } from '../../../core/models/inventory.models';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { SelectComponent, SelectOption } from '../../../shared/components/select/select.component';
 import { AlertComponent } from '../../../shared/components/alert/alert.component';
 import { ConfirmationModalComponent, ConfirmationData, ConfirmationItem } from '../../../shared/components/confirmation-modal/confirmation-modal.component';
+import { PaymentMethodSelectorComponent } from '../../../shared/components/payment-method-selector/payment-method-selector.component';
 import { convertEasternToUtc } from '../../../core/utils/timezone.utils';
 
 interface TransactionLine {
@@ -36,7 +37,8 @@ interface TransactionLine {
     InputComponent,
     SelectComponent,
     AlertComponent,
-    ConfirmationModalComponent
+    ConfirmationModalComponent,
+    PaymentMethodSelectorComponent
   ],
   template: `
     <div class="create-transaction">
@@ -76,13 +78,10 @@ interface TransactionLine {
               placeholder="Add notes about this transaction"
             ></app-input>
 
-            <app-select
-              [(ngModel)]="paymentMethod"
-              name="paymentMethod"
-              label="Payment Method"
-              [options]="paymentMethodOptions"
-              [required]="true"
-            ></app-select>
+            <app-payment-method-selector
+              [paymentDetails]="paymentDetails()"
+              (paymentDetailsChange)="onPaymentDetailsChange($event)"
+            ></app-payment-method-selector>
           </div>
 
           <div class="form-section">
@@ -221,6 +220,7 @@ export class CreateInComponent implements OnInit {
   transactionDate = new Date().toISOString().slice(0, 16);
   notes = '';
   paymentMethod: PaymentMethod = PaymentMethod.Cash;
+  paymentDetails = signal<PaymentDetail[]>([{ method: PaymentMethod.Cash, amount: 0 }]);
   lines = signal<TransactionLine[]>([]);
   loading = signal(false);
 
@@ -249,13 +249,6 @@ export class CreateInComponent implements OnInit {
       subtitle: item.description
     }))
   );
-
-  paymentMethodOptions: SelectOption[] = [
-    { value: PaymentMethod.Cash, label: 'Cash' },
-    { value: PaymentMethod.Card, label: 'Card' },
-    { value: PaymentMethod.AcimaShortTermCredit, label: 'Acima Short-Term Credit' },
-    { value: PaymentMethod.AccountsReceivable, label: 'Accounts Receivable' }
-  ];
 
   ngOnInit(): void {
     // Load branches and items
@@ -369,7 +362,12 @@ export class CreateInComponent implements OnInit {
       branchCode: this.branchCode || undefined,
       transactionDateUtc: convertEasternToUtc(this.transactionDate),
       notes: this.notes || undefined,
-      paymentMethod: this.paymentMethod,
+      paymentMethod: this.paymentDetails().length > 0 ? this.paymentDetails()[0].method : this.paymentMethod,
+      paymentDetails: this.paymentDetails().map(pd => ({
+        method: pd.method,
+        amount: pd.amount,
+        checkNumber: pd.checkNumber
+      })),
       lines: this.lines().map(line => ({
         itemCode: line.itemCode.trim().toUpperCase(),
         itemCondition: line.condition,
@@ -395,8 +393,12 @@ export class CreateInComponent implements OnInit {
   }
 
   private getPaymentMethodLabel(method: PaymentMethod): string {
-    const option = this.paymentMethodOptions.find(opt => opt.value === method);
-    return option?.label || method.toString();
+    const labels: Record<string, string> = {
+      Cash: 'Cash', Card: 'Card', Check: 'Check',
+      AcimaShortTermCredit: 'Acima Short-Term Credit',
+      AccountsReceivable: 'Accounts Receivable'
+    };
+    return labels[method] || method.toString();
   }
 
   commitTransaction(transactionId: string): void {
@@ -411,6 +413,10 @@ export class CreateInComponent implements OnInit {
         this.router.navigate(['/transactions']);
       }
     });
+  }
+
+  onPaymentDetailsChange(details: PaymentDetail[]): void {
+    this.paymentDetails.set(details);
   }
 
   onCancel(): void {

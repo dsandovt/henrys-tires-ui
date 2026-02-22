@@ -70,6 +70,7 @@ export interface Invoice {
   branchCode: string;
   branchName: string;
   paymentMethod: string;
+  paymentDetails?: { method: string; amount: number; checkNumber?: string }[];
   customerName?: string;
   customerNumber?: string;
   customerPhone?: string;
@@ -79,6 +80,7 @@ export interface Invoice {
   lines: InvoiceLine[];
   totals: InvoiceTotals;
   generatedAtUtc: string;
+  documentType?: string;
 }
 
 // Inventory Movements Report Models

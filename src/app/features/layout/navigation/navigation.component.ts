@@ -83,7 +83,7 @@ export class NavigationComponent {
 
   private readonly navItems: NavItem[] = [
     // Seller, StoreSeller & All Roles
-    { label: 'Stock', path: '/stock', icon: 'package', roles: [Role.Seller, Role.Supervisor, Role.Admin, Role.StoreSeller] },
+    { label: 'Stock', path: '/stock', icon: 'package', roles: [Role.Seller, Role.Supervisor, Role.Admin, Role.StoreSeller, Role.StockViewer] },
     { label: 'New Sale', path: '/sales/new', icon: 'shopping-cart', roles: [Role.Seller, Role.Supervisor, Role.Admin, Role.StoreSeller] },
     { label: 'Sales', path: '/sales', icon: 'banknote', roles: [Role.Seller, Role.Supervisor, Role.Admin, Role.StoreSeller] },
     { label: 'New Transaction IN', path: '/transactions/in/new', icon: 'arrow-down', roles: [Role.Seller, Role.Supervisor, Role.Admin] },

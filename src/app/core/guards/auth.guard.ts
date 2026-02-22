@@ -40,6 +40,8 @@ export const roleGuard = (allowedRoles: Role[]): CanActivateFn => {
     const userRole = authService.userRole();
     if (userRole === Role.Admin) {
       router.navigate(['/dashboard']);
+    } else if (userRole === Role.StockViewer) {
+      router.navigate(['/stock']);
     } else {
       router.navigate(['/stock']);
     }

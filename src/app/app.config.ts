@@ -1,10 +1,15 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChangeDetection, APP_INITIALIZER } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { ConfigService } from './core/services/config.service';
+
+function initializeApp(configService: ConfigService) {
+  return () => configService.loadConfig();
+}
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -14,6 +19,12 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       withInterceptors([authInterceptor])
     ),
-    provideAnimations()
+    provideAnimations(),
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeApp,
+      deps: [ConfigService],
+      multi: true
+    }
   ]
 };

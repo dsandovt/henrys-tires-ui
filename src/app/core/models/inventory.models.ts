@@ -105,7 +105,14 @@ export enum PaymentMethod {
   Cash = 'Cash',
   Card = 'Card',
   AcimaShortTermCredit = 'AcimaShortTermCredit',
-  AccountsReceivable = 'AccountsReceivable'
+  AccountsReceivable = 'AccountsReceivable',
+  Check = 'Check'
+}
+
+export interface PaymentDetail {
+  method: PaymentMethod;
+  amount: number;
+  checkNumber?: string;
 }
 
 export interface Transaction {
@@ -117,6 +124,7 @@ export interface Transaction {
   transactionDateUtc: string;
   notes?: string;
   paymentMethod?: PaymentMethod;
+  paymentDetails?: PaymentDetail[];
   committedAtUtc?: string;
   committedBy?: string;
   lines: TransactionLine[];
@@ -147,6 +155,7 @@ export interface CreateInTransactionRequest {
   transactionDateUtc: string;
   notes?: string;
   paymentMethod?: PaymentMethod;
+  paymentDetails?: PaymentDetail[];
   lines: InTransactionLineRequest[];
 }
 
@@ -164,6 +173,7 @@ export interface CreateOutTransactionRequest {
   transactionDateUtc: string;
   notes?: string;
   paymentMethod?: PaymentMethod;
+  paymentDetails?: PaymentDetail[];
   lines: OutTransactionLineRequest[];
 }
 
@@ -275,6 +285,7 @@ export interface Sale {
   customerPhone?: string;
   notes?: string;
   paymentMethod: PaymentMethod;
+  paymentDetails?: PaymentDetail[];
   status: TransactionStatus;
   postedAtUtc?: string;
   postedBy?: string;
@@ -306,6 +317,7 @@ export interface CreateSaleRequest {
   customerPhone?: string;
   notes?: string;
   paymentMethod: PaymentMethod;
+  paymentDetails?: PaymentDetail[];
 }
 
 export interface CreateSaleLineRequest {

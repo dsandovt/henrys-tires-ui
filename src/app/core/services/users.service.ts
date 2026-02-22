@@ -71,4 +71,13 @@ export class UsersService {
       map(response => response.data)
     );
   }
+
+  /**
+   * Reset user password (admin only)
+   */
+  resetPassword(userId: string, newPassword: string): Observable<void> {
+    return this.http.post<{ success: boolean; data: void }>(`${this.API_URL}/${userId}/reset-password`, { newPassword }).pipe(
+      map(response => response.data)
+    );
+  }
 }

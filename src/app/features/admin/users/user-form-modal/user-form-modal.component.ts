@@ -73,6 +73,7 @@ import { User, Branch } from '../../../../core/models/inventory.models';
             <option value="Supervisor">Supervisor</option>
             <option value="Seller">Seller</option>
             <option value="StoreSeller">StoreSeller</option>
+            <option value="StockViewer">StockViewer</option>
           </select>
           <span *ngIf="roleError()" class="error-text">{{ roleError() }}</span>
         </div>
@@ -89,7 +90,7 @@ import { User, Branch } from '../../../../core/models/inventory.models';
               {{ branch.name }} ({{ branch.code }})
             </option>
           </select>
-          <p class="hint-text">Required for StoreSeller users</p>
+          <p class="hint-text">Required for Seller, StoreSeller users</p>
         </div>
 
         <div class="form-group">

@@ -5,27 +5,34 @@ import { ReportsService } from '../../../core/services/reports.service';
 import { Invoice } from '../../../core/models/report.models';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
-import { LucideAngularModule, FileText, LucideIconProvider, LUCIDE_ICONS } from 'lucide-angular';
+import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
+import { LucideAngularModule, FileText, Printer, LucideIconProvider, LUCIDE_ICONS } from 'lucide-angular';
 
 @Component({
   selector: 'app-invoice-view',
   standalone: true,
-  imports: [CommonModule, CardComponent, ButtonComponent, LucideAngularModule],
+  imports: [CommonModule, CardComponent, ButtonComponent, LucideAngularModule, EasternTimePipe],
   providers: [
     {
       provide: LUCIDE_ICONS,
       multi: true,
-      useValue: new LucideIconProvider({ FileText })
+      useValue: new LucideIconProvider({ FileText, Printer })
     }
   ],
   template: `
     <div class="invoice-view">
       <div class="header">
-        <h1>Invoice</h1>
-        <app-button variant="danger" (click)="downloadPdf()" [disabled]="loading()">
-          <lucide-icon name="file-text" [size]="16"></lucide-icon>
-          Download PDF
-        </app-button>
+        <h1>{{ invoice()?.documentType || 'Invoice' }}</h1>
+        <div class="header-actions">
+          <app-button variant="primary" (click)="printInvoice()" [disabled]="loading()">
+            <lucide-icon name="printer" [size]="16"></lucide-icon>
+            Print
+          </app-button>
+          <app-button variant="danger" (click)="downloadPdf()" [disabled]="loading()">
+            <lucide-icon name="file-text" [size]="16"></lucide-icon>
+            Download PDF
+          </app-button>
+        </div>
       </div>
 
       <app-card *ngIf="!loading() && invoice()">
@@ -45,11 +52,20 @@ import { LucideAngularModule, FileText, LucideIconProvider, LUCIDE_ICONS } from 
           <div class="invoice-details">
             <div class="details-row">
               <div>
-                <h3>INVOICE</h3>
+                <h3>{{ invoice()?.documentType || 'INVOICE' }}</h3>
                 <p><strong>Invoice #:</strong> {{ invoice()?.invoiceNumber }}</p>
-                <p><strong>Date:</strong> {{ invoice()?.invoiceDateUtc | date:'MM/dd/yyyy' }}</p>
+                <p><strong>Date:</strong> {{ invoice()?.invoiceDateUtc | easternTime:'short' }}</p>
                 <p><strong>Branch:</strong> {{ invoice()?.branchCode }} - {{ invoice()?.branchName }}</p>
-                <p><strong>Payment Method:</strong> {{ invoice()?.paymentMethod }}</p>
+                <p *ngIf="!invoice()?.paymentDetails || invoice()!.paymentDetails!.length === 0">
+                  <strong>Payment Method:</strong> {{ invoice()?.paymentMethod }}
+                </p>
+                <div *ngIf="invoice()?.paymentDetails && invoice()!.paymentDetails!.length > 0">
+                  <p><strong>Payment Methods:</strong></p>
+                  <p *ngFor="let pd of invoice()!.paymentDetails" style="margin-left: 1rem; font-size: 0.9rem;">
+                    {{ pd.method }}: {{ pd.amount | number:'1.2-2' }}
+                    <span *ngIf="pd.checkNumber"> (Check #{{ pd.checkNumber }})</span>
+                  </p>
+                </div>
               </div>
               <div class="bill-to">
                 <h4>BILL TO</h4>
@@ -155,6 +171,12 @@ import { LucideAngularModule, FileText, LucideIconProvider, LUCIDE_ICONS } from 
 
     .header h1 {
       margin: 0;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
     }
 
     .invoice-content {
@@ -310,6 +332,10 @@ export class InvoiceViewComponent implements OnInit {
       },
       error: (err) => console.error('Failed to download PDF', err)
     });
+  }
+
+  printInvoice(): void {
+    window.print();
   }
 
   getCurrency(): string {

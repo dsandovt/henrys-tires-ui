@@ -3,18 +3,20 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReportsService } from '../../../core/services/reports.service';
 import { BranchesService } from '../../../core/services/branches.service';
+import { ToastService } from '../../../shared/components/toast/toast.service';
 import { InventoryMovementsReport } from '../../../core/models/report.models';
 import { Branch } from '../../../core/models/inventory.models';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { SelectComponent } from '../../../shared/components/select/select.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
+import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
 import { LucideAngularModule, Download, LucideIconProvider, LUCIDE_ICONS } from 'lucide-angular';
 
 @Component({
   selector: 'app-inventory-movements',
   standalone: true,
-  imports: [CommonModule, FormsModule, CardComponent, ButtonComponent, SelectComponent, InputComponent, LucideAngularModule],
+  imports: [CommonModule, FormsModule, CardComponent, ButtonComponent, SelectComponent, InputComponent, LucideAngularModule, EasternTimePipe],
   providers: [
     {
       provide: LUCIDE_ICONS,
@@ -62,7 +64,7 @@ import { LucideAngularModule, Download, LucideIconProvider, LUCIDE_ICONS } from 
 
         <div *ngIf="!loading() && report()">
           <div class="report-info">
-            <p><strong>Period:</strong> {{ formatDate(report()?.fromDateUtc) }} - {{ formatDate(report()?.toDateUtc) }}</p>
+            <p><strong>Period:</strong> {{ report()?.fromDateUtc | easternTime:'date' }} - {{ report()?.toDateUtc | easternTime:'date' }}</p>
             <p><strong>Total Transactions:</strong> {{ report()?.totalCount }}</p>
           </div>
 
@@ -75,8 +77,8 @@ import { LucideAngularModule, Download, LucideIconProvider, LUCIDE_ICONS } from 
               <div class="transaction-details">
                 <p><strong>Type:</strong> {{ transaction.type }}</p>
                 <p><strong>Branch:</strong> {{ transaction.branchCode }}</p>
-                <p><strong>Date:</strong> {{ transaction.transactionDateUtc | date:'MM/dd/yyyy' }}</p>
-                <p *ngIf="transaction.committedAtUtc"><strong>Committed:</strong> {{ transaction.committedAtUtc | date:'MM/dd/yyyy' }}</p>
+                <p><strong>Date:</strong> {{ transaction.transactionDateUtc | easternTime:'short' }}</p>
+                <p *ngIf="transaction.committedAtUtc"><strong>Committed:</strong> {{ transaction.committedAtUtc | easternTime:'short' }}</p>
               </div>
               <div class="transaction-lines">
                 <table>
@@ -231,6 +233,7 @@ import { LucideAngularModule, Download, LucideIconProvider, LUCIDE_ICONS } from 
 export class InventoryMovementsComponent implements OnInit {
   private reportsService = inject(ReportsService);
   private branchesService = inject(BranchesService);
+  private toastService = inject(ToastService);
 
   report = signal<InventoryMovementsReport | null>(null);
   loading = signal(false);
@@ -247,9 +250,9 @@ export class InventoryMovementsComponent implements OnInit {
 
   typeOptions = [
     { value: '', label: 'All Types' },
-    { value: 'TransferIn', label: 'Transfer In' },
-    { value: 'TransferOut', label: 'Transfer Out' },
-    { value: 'Adjustment', label: 'Adjustment' }
+    { value: 'In', label: 'Transfer In' },
+    { value: 'Out', label: 'Transfer Out' },
+    { value: 'Adjust', label: 'Adjustment' }
   ];
 
   statusOptions = [
@@ -275,6 +278,11 @@ export class InventoryMovementsComponent implements OnInit {
   }
 
   loadReport() {
+    if (this.fromDate && this.toDate && this.toDate < this.fromDate) {
+      this.toastService.danger('"To Date" cannot be before "From Date".');
+      return;
+    }
+
     this.loading.set(true);
 
     const params = {
@@ -315,7 +323,4 @@ export class InventoryMovementsComponent implements OnInit {
     });
   }
 
-  formatDate(date?: string): string {
-    return date ? new Date(date).toLocaleDateString() : 'N/A';
-  }
 }

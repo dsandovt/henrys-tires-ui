@@ -8,13 +8,14 @@ import { ItemsService } from '../../../core/services/items.service';
 import { BranchesService } from '../../../core/services/branches.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
-import { ItemCondition, Item, Branch, CreateSaleLineRequest, Currency, PaymentMethod } from '../../../core/models/inventory.models';
+import { ItemCondition, Item, Branch, CreateSaleLineRequest, Currency, PaymentMethod, PaymentDetail } from '../../../core/models/inventory.models';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { SelectComponent, SelectOption } from '../../../shared/components/select/select.component';
 import { AlertComponent } from '../../../shared/components/alert/alert.component';
 import { ConfirmationModalComponent, ConfirmationData, ConfirmationItem } from '../../../shared/components/confirmation-modal/confirmation-modal.component';
+import { PaymentMethodSelectorComponent } from '../../../shared/components/payment-method-selector/payment-method-selector.component';
 import { convertEasternToUtc } from '../../../core/utils/timezone.utils';
 
 interface SaleLineForm extends CreateSaleLineRequest {
@@ -32,7 +33,8 @@ interface SaleLineForm extends CreateSaleLineRequest {
     InputComponent,
     SelectComponent,
     AlertComponent,
-    ConfirmationModalComponent
+    ConfirmationModalComponent,
+    PaymentMethodSelectorComponent
   ],
   templateUrl: './create-sale.component.html',
   styleUrls: ['./create-sale.component.scss']
@@ -52,6 +54,7 @@ export class CreateSaleComponent implements OnInit {
   customerPhone = '';
   notes = '';
   paymentMethod: PaymentMethod = PaymentMethod.Cash;
+  paymentDetails = signal<PaymentDetail[]>([{ method: PaymentMethod.Cash, amount: 0 }]);
   lines = signal<SaleLineForm[]>([]);
   loading = signal(false);
 
@@ -78,13 +81,6 @@ export class CreateSaleComponent implements OnInit {
       subtitle: `${item.description} [${item.classification}]`
     }))
   );
-
-  paymentMethodOptions: SelectOption[] = [
-    { value: PaymentMethod.Cash, label: 'Cash' },
-    { value: PaymentMethod.Card, label: 'Card' },
-    { value: PaymentMethod.AcimaShortTermCredit, label: 'Acima Short-Term Credit' },
-    { value: PaymentMethod.AccountsReceivable, label: 'Accounts Receivable' }
-  ];
 
   ngOnInit(): void {
     this.loadBranches();
@@ -286,7 +282,12 @@ export class CreateSaleComponent implements OnInit {
       customerName: this.customerName || undefined,
       customerPhone: this.customerPhone || undefined,
       notes: this.notes || undefined,
-      paymentMethod: this.paymentMethod
+      paymentMethod: this.paymentDetails().length > 0 ? this.paymentDetails()[0].method : this.paymentMethod,
+      paymentDetails: this.paymentDetails().map(pd => ({
+        method: pd.method,
+        amount: pd.amount,
+        checkNumber: pd.checkNumber
+      }))
     };
 
     this.salesService.createSale(request).subscribe({
@@ -304,8 +305,12 @@ export class CreateSaleComponent implements OnInit {
   }
 
   private getPaymentMethodLabel(method: PaymentMethod): string {
-    const option = this.paymentMethodOptions.find(opt => opt.value === method);
-    return option?.label || method.toString();
+    const labels: Record<string, string> = {
+      Cash: 'Cash', Card: 'Card', Check: 'Check',
+      AcimaShortTermCredit: 'Acima Short-Term Credit',
+      AccountsReceivable: 'Accounts Receivable'
+    };
+    return labels[method] || method.toString();
   }
 
   postSale(saleId: string): void {
@@ -320,6 +325,10 @@ export class CreateSaleComponent implements OnInit {
         this.router.navigate(['/sales']);
       }
     });
+  }
+
+  onPaymentDetailsChange(details: PaymentDetail[]): void {
+    this.paymentDetails.set(details);
   }
 
   onCancel(): void {
