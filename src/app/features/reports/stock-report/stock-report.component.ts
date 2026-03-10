@@ -8,12 +8,13 @@ import { Branch } from '../../../core/models/inventory.models';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { SelectComponent } from '../../../shared/components/select/select.component';
+import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
 import { LucideAngularModule, Download, LucideIconProvider, LUCIDE_ICONS } from 'lucide-angular';
 
 @Component({
   selector: 'app-stock-report',
   standalone: true,
-  imports: [CommonModule, FormsModule, CardComponent, ButtonComponent, SelectComponent, LucideAngularModule],
+  imports: [CommonModule, FormsModule, CardComponent, ButtonComponent, SelectComponent, LucideAngularModule, EasternTimePipe],
   providers: [
     {
       provide: LUCIDE_ICONS,
@@ -46,7 +47,7 @@ import { LucideAngularModule, Download, LucideIconProvider, LUCIDE_ICONS } from 
         <div *ngIf="!loading() && report()">
           <div class="report-info">
             <p><strong>Branch:</strong> {{ report()?.branchName || 'All Branches' }}</p>
-            <p><strong>Generated:</strong> {{ report()?.generatedAtUtc | date:'MM/dd/yyyy' }}</p>
+            <p><strong>Generated:</strong> {{ report()?.generatedAtUtc | easternTime:'short' }}</p>
           </div>
 
           <div class="table-container">
@@ -67,7 +68,7 @@ import { LucideAngularModule, Download, LucideIconProvider, LUCIDE_ICONS } from 
                   <td>{{ row.description }}</td>
                   <td>
                     <span class="condition-badge" [class.new]="row.condition === 'New'" [class.used]="row.condition === 'Used'">
-                      {{ row.condition }}
+                      {{ row.condition || 'Unknown' }}
                     </span>
                   </td>
                   <td class="number">{{ row.onHand }}</td>

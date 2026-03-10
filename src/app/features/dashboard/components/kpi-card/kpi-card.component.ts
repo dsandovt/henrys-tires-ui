@@ -1,12 +1,13 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { SensitivePipe } from '../../../../shared/pipes/sensitive.pipe';
 
 export type KpiVariant = 'sale' | 'purchase' | 'neutral';
 
 @Component({
   selector: 'app-kpi-card',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, SensitivePipe],
   template: `
     <div class="kpi-card" [class.kpi-card--sale]="variant === 'sale'" [class.kpi-card--purchase]="variant === 'purchase'">
       <div class="kpi-card__header">
@@ -19,7 +20,7 @@ export type KpiVariant = 'sale' | 'purchase' | 'neutral';
         <div class="kpi-card__value" [class.kpi-card__value--loading]="loading">
           <ng-container *ngIf="!loading">
             <span class="value-currency" *ngIf="currency">{{ currency }}</span>
-            <span class="value-amount">{{ formattedValue }}</span>
+            <span class="value-amount">{{ formattedValue | sensitive }}</span>
           </ng-container>
           <div *ngIf="loading" class="skeleton-box"></div>
         </div>

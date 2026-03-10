@@ -1,20 +1,21 @@
-import { Component, inject, signal, OnInit, ViewChild, computed } from '@angular/core';
+import { Component, inject, signal, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UsersService } from '../../../../core/services/users.service';
 import { BranchesService } from '../../../../core/services/branches.service';
+import { GroupsService } from '../../../../core/services/groups.service';
 import { ToastService } from '../../../../shared/components/toast/toast.service';
-import { User, Branch } from '../../../../core/models/inventory.models';
-import { TableComponent } from '../../../../shared/components/table/table.component';
+import { User, Branch, Group } from '../../../../core/models/inventory.models';
 import { CardComponent } from '../../../../shared/components/card/card.component';
 import { InputComponent } from '../../../../shared/components/input/input.component';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
 import { UserFormModalComponent } from '../user-form-modal/user-form-modal.component';
+import { ResetPasswordModalComponent } from '../reset-password-modal/reset-password-modal.component';
 
 @Component({
   selector: 'app-users-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, TableComponent, CardComponent, InputComponent, ButtonComponent, UserFormModalComponent],
+  imports: [CommonModule, FormsModule, CardComponent, InputComponent, ButtonComponent, UserFormModalComponent, ResetPasswordModalComponent],
   template: `
     <div class="users-list">
       <div class="page-header">
@@ -23,7 +24,34 @@ import { UserFormModalComponent } from '../user-form-modal/user-form-modal.compo
       </div>
 
       <app-card>
-        <app-table [columns]="columns" [data]="displayUsers()" emptyMessage="No users found"></app-table>
+        <table class="users-table">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Groups</th>
+              <th>Active</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of users()">
+              <td>{{ user.username }}</td>
+              <td>{{ user.firstName }} {{ user.lastName }}</td>
+              <td>{{ user.email || '-' }}</td>
+              <td>{{ user.groupReferences.join(', ') || '-' }}</td>
+              <td>{{ user.isActive ? 'Yes' : 'No' }}</td>
+              <td class="actions-cell">
+                <button class="action-btn edit-btn" (click)="showEditDialog(user)">Edit</button>
+                <button class="action-btn reset-btn" (click)="showResetPasswordDialog(user)">Reset Password</button>
+              </td>
+            </tr>
+            <tr *ngIf="users().length === 0">
+              <td colspan="6" class="empty-message">No users found</td>
+            </tr>
+          </tbody>
+        </table>
         <div *ngIf="totalCount() > 0" class="pagination">
           <p class="pagination-info">Showing {{ ((currentPage() - 1) * pageSize()) + 1 }} to {{ Math.min(currentPage() * pageSize(), totalCount()) }} of {{ totalCount() }} users</p>
           <div class="pagination-controls">
@@ -34,7 +62,8 @@ import { UserFormModalComponent } from '../user-form-modal/user-form-modal.compo
         </div>
       </app-card>
 
-      <app-user-form-modal [branches]="branches" (userSaved)="onUserSaved()"></app-user-form-modal>
+      <app-user-form-modal [branches]="branches" [groups]="groups" (userSaved)="onUserSaved()"></app-user-form-modal>
+      <app-reset-password-modal (passwordReset)="onUserSaved()"></app-reset-password-modal>
     </div>
   `,
   styles: [`
@@ -45,13 +74,25 @@ import { UserFormModalComponent } from '../user-form-modal/user-form-modal.compo
     .pagination-info { margin: 0; font-size: 0.875rem; color: #737373; }
     .pagination-controls { display: flex; gap: 0.75rem; align-items: center; }
     .page-number { font-size: 0.875rem; font-weight: 500; color: #404040; }
+    .users-table { width: 100%; border-collapse: collapse; }
+    .users-table th, .users-table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #e5e5e5; font-size: 0.875rem; }
+    .users-table th { font-weight: 600; color: #404040; background: #f9fafb; }
+    .users-table td { color: #525252; }
+    .actions-cell { display: flex; gap: 0.5rem; }
+    .action-btn { padding: 0.25rem 0.625rem; font-size: 0.8125rem; border: 1px solid #d4d4d4; border-radius: 4px; cursor: pointer; background: #fff; color: #404040; transition: background 0.15s; }
+    .action-btn:hover { background: #f3f4f6; }
+    .reset-btn { color: #dc2626; border-color: #fca5a5; }
+    .reset-btn:hover { background: #fef2f2; }
+    .empty-message { text-align: center; color: #737373; padding: 2rem !important; }
   `]
 })
 export class UsersListComponent implements OnInit {
   @ViewChild(UserFormModalComponent) userFormModal!: UserFormModalComponent;
+  @ViewChild(ResetPasswordModalComponent) resetPasswordModal!: ResetPasswordModalComponent;
 
   private usersService = inject(UsersService);
   private branchesService = inject(BranchesService);
+  private groupsService = inject(GroupsService);
   private toastService = inject(ToastService);
   Math = Math;
   searchQuery = '';
@@ -60,35 +101,25 @@ export class UsersListComponent implements OnInit {
   totalCount = signal(0);
   users = signal<User[]>([]);
   branches = signal<Branch[]>([]);
-
-  // Computed signal to transform user data with readable branch names
-  displayUsers = computed(() => {
-    const branchMap = new Map(this.branches().map(b => [b.id, `${b.name} (${b.code})`]));
-    return this.users().map(user => ({
-      ...user,
-      branchId: user.branchId ? (branchMap.get(user.branchId) || user.branchId) : '-'
-    }));
-  });
-
-  columns = [
-    { key: 'username', label: 'Username', sortable: true },
-    { key: 'role', label: 'Role', sortable: true },
-    { key: 'branchId', label: 'Branch', sortable: true },
-    { key: 'isActive', label: 'Active', sortable: true },
-    { key: 'createdBy', label: 'Created By', sortable: true }
-  ];
+  groups = signal<Group[]>([]);
 
   ngOnInit(): void {
     this.loadBranches();
+    this.loadGroups();
     this.loadUsers();
   }
 
   loadBranches(): void {
     this.branchesService.getAllBranches().subscribe({
-      next: (branches: Branch[]) => {
-        this.branches.set(branches);
-      },
+      next: (branches: Branch[]) => this.branches.set(branches),
       error: (err: any) => console.error('Failed to load branches:', err)
+    });
+  }
+
+  loadGroups(): void {
+    this.groupsService.getAllGroups().subscribe({
+      next: (groups) => this.groups.set(groups),
+      error: (err: any) => console.error('Failed to load groups:', err)
     });
   }
 
@@ -105,6 +136,17 @@ export class UsersListComponent implements OnInit {
 
   showCreateDialog(): void {
     this.userFormModal.open();
+  }
+
+  showEditDialog(user: any): void {
+    const originalUser = this.users().find(u => u.id === user.id);
+    if (originalUser) {
+      this.userFormModal.open(originalUser);
+    }
+  }
+
+  showResetPasswordDialog(user: any): void {
+    this.resetPasswordModal.open(user.id, user.username);
   }
 
   onUserSaved(): void {

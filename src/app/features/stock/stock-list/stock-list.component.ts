@@ -7,7 +7,6 @@ import { InventoryService } from '../../../core/services/inventory.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { BranchesService } from '../../../core/services/branches.service';
 import { InventorySummary, ItemCondition, Branch } from '../../../core/models/inventory.models';
-import { Role } from '../../../core/models/auth.models';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
@@ -50,18 +49,12 @@ import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.
             </select>
           </div>
 
-          <div class="action-buttons" *ngIf="canCreateTransactions()">
+          <div class="action-buttons" *ngIf="canCreatePurchaseOrders()">
             <app-button
               variant="primary"
-              routerLink="/transactions/in/new"
+              [routerLink]="['/purchase-order-details']" [queryParams]="{ new: true }"
             >
-              + Transfer IN
-            </app-button>
-            <app-button
-              variant="secondary"
-              routerLink="/transactions/out/new"
-            >
-              Transfer OUT
+              + New Purchase Order
             </app-button>
           </div>
         </div>
@@ -111,8 +104,8 @@ import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.
                 <td class="text-right font-semibold">{{ item.onHandTotal - item.reservedTotal }}</td>
                 <td>
                   <div class="condition-breakdown">
-                    <span *ngFor="let entry of item.entries" class="condition-badge" [class.new]="isNewCondition(entry.itemCondition)" [class.used]="isUsedCondition(entry.itemCondition)">
-                      {{ getConditionName(entry.itemCondition) }}: {{ entry.onHand }}
+                    <span *ngFor="let entry of item.entries" class="condition-badge" [class.new]="isNewCondition(entry.condition)" [class.used]="isUsedCondition(entry.condition)">
+                      {{ getConditionName(entry.condition) }}: {{ entry.onHand }}
                       <span *ngIf="entry.reserved > 0" class="reserved-count">({{ entry.reserved }} reserved)</span>
                     </span>
                   </div>
@@ -180,9 +173,8 @@ export class StockListComponent implements OnInit, OnDestroy {
     this.searchQuery ? `No items found matching "${this.searchQuery}"` : 'No stock items available'
   );
 
-  canCreateTransactions = computed(() => {
-    const userRole = this.authService.userRole();
-    return userRole !== Role.StoreSeller;
+  canCreatePurchaseOrders = computed(() => {
+    return this.authService.hasAnyRole(['SELLER', 'SUPERVISOR', 'ADMIN']);
   });
 
   ngOnInit(): void {
@@ -277,7 +269,7 @@ export class StockListComponent implements OnInit, OnDestroy {
   }
 
   getConditionName(condition: any): string {
-    // Handle both enum values and potential numeric values from API
+    if (condition == null) return 'Unknown';
     if (condition === ItemCondition.New || condition === 'New' || condition === 0) {
       return 'New';
     } else if (condition === ItemCondition.Used || condition === 'Used' || condition === 1) {

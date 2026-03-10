@@ -21,13 +21,14 @@
             (selectionChange)="onBranchChanged()"
           ></app-select>
 
-          <app-input
-            [(ngModel)]="saleDate"
-            name="saleDate"
-            label="Sale Date"
-            type="datetime-local"
-            [required]="true"
-          ></app-input>
+          @if (authService.isAdmin()) {
+            <app-input
+              [(ngModel)]="saleDate"
+              name="saleDate"
+              label="Sale Date"
+              type="datetime-local"
+            ></app-input>
+          }
         </div>
 
         <div class="form-row">
@@ -53,13 +54,11 @@
           placeholder="Add notes about this sale"
         ></app-input>
 
-        <app-select
-          [(ngModel)]="paymentMethod"
-          name="paymentMethod"
-          label="Payment Method"
-          [options]="paymentMethodOptions"
-          [required]="true"
-        ></app-select>
+        <app-payment-method-selector
+          [saleTotal]="saleTotal()"
+          (paymentDetailsChange)="onPaymentDetailsChange($event)"
+          (validityChange)="onPaymentValidityChange($event)"
+        ></app-payment-method-selector>
       </div>
 
       <div class="form-section">
@@ -98,7 +97,7 @@
           <div class="line-fields">
             <div class="form-row">
               <app-select
-                [(ngModel)]="line.itemId"
+                [(ngModel)]="line.itemReference"
                 [name]="'itemId_' + i"
                 label="Item"
                 placeholder="Search by code or description"
@@ -131,7 +130,19 @@
                 [required]="true"
                 [error]="getStockError(line)"
                 [hint]="line.classification === 'Good' ? 'Available: ' + (line.availableStock ?? '...') : ''"
+                (ngModelChange)="recalcTotal()"
               ></app-input>
+            </div>
+
+            <div class="form-row" *ngIf="line.classification === 'Good' && line.condition === 'New'">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  [(ngModel)]="line.allowWithoutStock"
+                  [name]="'allowWithoutStock_' + i"
+                />
+                Allow sale without stock (new tires)
+              </label>
             </div>
 
             <div class="form-row">
@@ -142,6 +153,7 @@
                 type="number"
                 placeholder="0.00"
                 [required]="true"
+                (ngModelChange)="recalcTotal()"
               ></app-input>
 
               <app-input
@@ -153,7 +165,7 @@
 
               <div class="form-group">
                 <label>Line Total</label>
-                <div class="line-total">{{ calculateLineTotal(line) | number: '1.2-2' }} {{ line.currency }}</div>
+                <div class="line-total">{{ calculateLineTotal(line) | number: '1.2-2' | sensitive }} {{ line.currency }}</div>
               </div>
             </div>
 

@@ -67,7 +67,7 @@ export interface UpdatePriceRequest {
 }
 
 // ----------------------------------------------------------------------------
-// Transaction Models
+// Shared / Common Models
 // ----------------------------------------------------------------------------
 
 export enum Currency {
@@ -75,10 +75,61 @@ export enum Currency {
   DOP = 'DOP'
 }
 
-export enum TransactionType {
-  In = 'In',
-  Out = 'Out',
-  Adjust = 'Adjust'
+export enum ItemCondition {
+  New = 'New',
+  Used = 'Used'
+}
+
+export enum PaymentMethod {
+  Cash = 'Cash',
+  Card = 'Card',
+  Check = 'Check',
+  Transfer = 'Transfer',
+  Split = 'Split'
+}
+
+export interface PaymentDetail {
+  method: PaymentMethod;
+  amount: number;
+  checkNumber?: string;
+}
+
+// ----------------------------------------------------------------------------
+// StatusHistory Models
+// ----------------------------------------------------------------------------
+
+export interface UserLite {
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  secondLastName?: string;
+  username: string;
+  email?: string;
+}
+
+export interface StatusHistoryEntry {
+  date: string;
+  status: string;
+  user: UserLite;
+  comment?: string;
+}
+
+// ----------------------------------------------------------------------------
+// Transaction Models (read-only in UI)
+// ----------------------------------------------------------------------------
+
+export enum InitiatorType {
+  PurchaseOrder = 'PurchaseOrder',
+  Sale = 'Sale',
+  StockAdjustment = 'StockAdjustment',
+  StockLoss = 'StockLoss',
+  BranchTransfer = 'BranchTransfer'
+}
+
+export interface EntityKey {
+  reference: string;
+  referenceNumber: string;
+  entityDefinitionCode: InitiatorType;
 }
 
 export enum TransactionStatus {
@@ -87,38 +138,14 @@ export enum TransactionStatus {
   Cancelled = 'Cancelled'
 }
 
-export enum ItemCondition {
-  New = 'New',
-  Used = 'Used'
-}
-
-export enum PriceSource {
-  ConsumableItemPrice = 'ConsumableItemPrice',
-  Manual = 'Manual',
-  Sale = 'Sale',
-  SystemDefault = 'SystemDefault',
-  PurchaseOrder = 'PurchaseOrder',
-  AverageCost = 'AverageCost'
-}
-
-export enum PaymentMethod {
-  Cash = 'Cash',
-  Card = 'Card',
-  AcimaShortTermCredit = 'AcimaShortTermCredit',
-  AccountsReceivable = 'AccountsReceivable'
-}
-
 export interface Transaction {
   id: string;
-  transactionNumber: string;
   branchCode: string;
-  type: TransactionType;
+  initiator: EntityKey;
   status: TransactionStatus;
   transactionDateUtc: string;
   notes?: string;
-  paymentMethod?: PaymentMethod;
-  committedAtUtc?: string;
-  committedBy?: string;
+  statusHistory: StatusHistoryEntry[];
   lines: TransactionLine[];
   createdAtUtc: string;
   createdBy: string;
@@ -129,67 +156,8 @@ export interface Transaction {
 export interface TransactionLine {
   lineId: string;
   itemCode: string;
-  itemCondition: string; // Changed from 'condition' to match backend DTO 'ItemCondition'
+  condition: string;
   quantity: number;
-  unitPrice: number;
-  currency: Currency;
-  priceSource: string;
-  priceSetByRole: string;
-  priceSetByUser: string;
-  lineTotal: number;
-  costOfGoodsSold?: number;
-  priceNotes?: string;
-  executedAtUtc: string;
-}
-
-export interface CreateInTransactionRequest {
-  branchCode?: string;
-  transactionDateUtc: string;
-  notes?: string;
-  paymentMethod?: PaymentMethod;
-  lines: InTransactionLineRequest[];
-}
-
-export interface InTransactionLineRequest {
-  itemCode: string;
-  itemCondition: ItemCondition;
-  quantity: number;
-  unitPrice?: number;
-  currency?: Currency;
-  priceNotes?: string;
-}
-
-export interface CreateOutTransactionRequest {
-  branchCode?: string;
-  transactionDateUtc: string;
-  notes?: string;
-  paymentMethod?: PaymentMethod;
-  lines: OutTransactionLineRequest[];
-}
-
-export interface OutTransactionLineRequest {
-  itemCode: string;
-  itemCondition: ItemCondition;
-  quantity: number;
-  unitPrice?: number;
-  currency?: Currency;
-  priceNotes?: string;
-}
-
-export interface CreateAdjustTransactionRequest {
-  branchCode?: string;
-  transactionDateUtc: string;
-  notes?: string;
-  lines: AdjustTransactionLineRequest[];
-}
-
-export interface AdjustTransactionLineRequest {
-  itemCode: string;
-  itemCondition: ItemCondition;
-  newQuantity: number;
-  unitPrice?: number;
-  currency?: Currency;
-  priceNotes?: string;
 }
 
 // ----------------------------------------------------------------------------
@@ -208,7 +176,7 @@ export interface InventorySummary {
 }
 
 export interface InventoryEntry {
-  itemCondition: ItemCondition;
+  condition: ItemCondition;
   onHand: number;
   reserved: number;
   latestEntryDateUtc: string;
@@ -227,8 +195,13 @@ export interface StockTotals {
 export interface User {
   id: string;
   username: string;
-  role: string;
-  branchId?: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  secondLastName?: string;
+  email?: string;
+  groupReferences: string[];
+  branchReferences: string[];
   isActive: boolean;
   createdAtUtc: string;
   createdBy: string;
@@ -237,16 +210,26 @@ export interface User {
 export interface CreateUserRequest {
   username: string;
   password: string;
-  role: string;
-  branchId?: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  secondLastName?: string;
+  email?: string;
+  groupReferences: string[];
+  branchReferences: string[];
   isActive: boolean;
 }
 
 export interface UpdateUserRequest {
   username?: string;
   password?: string;
-  role?: string;
-  branchId?: string;
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  secondLastName?: string;
+  email?: string;
+  groupReferences?: string[];
+  branchReferences?: string[];
   isActive?: boolean;
 }
 
@@ -262,22 +245,76 @@ export interface Branch {
 }
 
 // ----------------------------------------------------------------------------
+// Role & Group Models
+// ----------------------------------------------------------------------------
+
+export interface Role {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  createdAtUtc: string;
+  createdBy: string;
+}
+
+export interface CreateRoleRequest {
+  code: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+}
+
+export interface UpdateRoleRequest {
+  name?: string;
+  description?: string;
+  isActive?: boolean;
+}
+
+export interface Group {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  roleReferences: string[];
+  isActive: boolean;
+  createdAtUtc: string;
+  createdBy: string;
+}
+
+export interface CreateGroupRequest {
+  code: string;
+  name: string;
+  description?: string;
+  roleReferences: string[];
+  isActive: boolean;
+}
+
+export interface UpdateGroupRequest {
+  name?: string;
+  description?: string;
+  roleReferences?: string[];
+  isActive?: boolean;
+}
+
+// ----------------------------------------------------------------------------
 // Sale Models
 // ----------------------------------------------------------------------------
 
 export interface Sale {
   id: string;
-  saleNumber: string;
-  branchId: string;
+  number: string;
+  branchReference: string;
+  branchCode: string;
   saleDateUtc: string;
   lines: SaleLine[];
   customerName?: string;
   customerPhone?: string;
   notes?: string;
   paymentMethod: PaymentMethod;
-  status: TransactionStatus;
-  postedAtUtc?: string;
-  postedBy?: string;
+  paymentDetails?: PaymentDetail[];
+  status: string;
+  statusHistory: StatusHistoryEntry[];
   createdAtUtc: string;
   createdBy: string;
   modifiedAtUtc?: string;
@@ -286,7 +323,7 @@ export interface Sale {
 
 export interface SaleLine {
   lineId: string;
-  itemId: string;
+  itemReference: string;
   itemCode: string;
   description: string;
   classification: 'Good' | 'Service';
@@ -295,21 +332,23 @@ export interface SaleLine {
   unitPrice: number;
   currency: Currency;
   lineTotal: number;
-  inventoryTransactionId?: string;
+  isTaxable: boolean;
+  appliesShopFee: boolean;
 }
 
 export interface CreateSaleRequest {
   branchCode?: string;
-  saleDateUtc: string;
+  saleDateUtc?: string;
   lines: CreateSaleLineRequest[];
   customerName?: string;
   customerPhone?: string;
   notes?: string;
   paymentMethod: PaymentMethod;
+  paymentDetails?: PaymentDetail[];
 }
 
 export interface CreateSaleLineRequest {
-  itemId: string;
+  itemReference: string;
   itemCode: string;
   description: string;
   classification: 'Good' | 'Service';
@@ -317,10 +356,66 @@ export interface CreateSaleLineRequest {
   quantity: number;
   unitPrice: number;
   currency: Currency;
+  allowWithoutStock?: boolean;
 }
 
 export interface SaleListResponse {
   items: Sale[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+// ----------------------------------------------------------------------------
+// Purchase Order Models
+// ----------------------------------------------------------------------------
+
+export interface PurchaseOrder {
+  id: string;
+  number: string;
+  branchReference: string;
+  branchCode: string;
+  orderDateUtc: string;
+  lines: PurchaseOrderLine[];
+  supplierName?: string;
+  notes?: string;
+  status: string;
+  statusHistory: StatusHistoryEntry[];
+  createdAtUtc: string;
+  createdBy: string;
+  modifiedAtUtc?: string;
+  modifiedBy?: string;
+}
+
+export interface PurchaseOrderLine {
+  lineId: string;
+  itemReference: string;
+  itemCode: string;
+  condition: ItemCondition;
+  quantity: number;
+  unitPrice: number;
+  currency: Currency;
+}
+
+export interface CreatePurchaseOrderRequest {
+  branchCode?: string;
+  orderDateUtc?: string;
+  lines: CreatePurchaseOrderLineRequest[];
+  supplierName?: string;
+  notes?: string;
+}
+
+export interface CreatePurchaseOrderLineRequest {
+  itemReference: string;
+  itemCode: string;
+  condition: ItemCondition;
+  quantity: number;
+  unitPrice?: number;
+  currency?: Currency;
+}
+
+export interface PurchaseOrderListResponse {
+  items: PurchaseOrder[];
   totalCount: number;
   page: number;
   pageSize: number;

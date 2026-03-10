@@ -35,7 +35,7 @@ import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
             </thead>
             <tbody>
               <tr *ngFor="let sale of sales()" (click)="viewSale(sale.id)" class="clickable-row">
-                <td><strong>{{ sale.saleNumber }}</strong></td>
+                <td><strong>{{ sale.number }}</strong></td>
                 <td>{{ sale.saleDateUtc | easternTime:'short' }}</td>
                 <td>{{ sale.customerName || '-' }}</td>
                 <td>
@@ -187,11 +187,11 @@ export class SalesListComponent implements OnInit {
   }
 
   createSale(): void {
-    this.router.navigate(['/sales/new']);
+    this.router.navigate(['/sale-details'], { queryParams: { new: true } });
   }
 
   viewSale(id: string): void {
-    this.router.navigate(['/sales', id]);
+    this.router.navigate(['/sale-details'], { queryParams: { id } });
   }
 
   hasGoods(sale: Sale): boolean {

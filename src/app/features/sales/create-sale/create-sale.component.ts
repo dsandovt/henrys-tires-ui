@@ -8,14 +8,16 @@ import { ItemsService } from '../../../core/services/items.service';
 import { BranchesService } from '../../../core/services/branches.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
-import { ItemCondition, Item, Branch, CreateSaleLineRequest, Currency, PaymentMethod } from '../../../core/models/inventory.models';
+import { ItemCondition, Item, Branch, CreateSaleLineRequest, Currency, PaymentMethod, PaymentDetail } from '../../../core/models/inventory.models';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { SelectComponent, SelectOption } from '../../../shared/components/select/select.component';
 import { AlertComponent } from '../../../shared/components/alert/alert.component';
 import { ConfirmationModalComponent, ConfirmationData, ConfirmationItem } from '../../../shared/components/confirmation-modal/confirmation-modal.component';
-import { convertEasternToUtc } from '../../../core/utils/timezone.utils';
+import { PaymentMethodSelectorComponent } from '../../../shared/components/payment-method-selector/payment-method-selector.component';
+import { localToUtcIso } from '../../../core/utils/timezone.utils';
+import { SensitivePipe } from '../../../shared/pipes/sensitive.pipe';
 
 interface SaleLineForm extends CreateSaleLineRequest {
   availableStock?: number;
@@ -32,7 +34,9 @@ interface SaleLineForm extends CreateSaleLineRequest {
     InputComponent,
     SelectComponent,
     AlertComponent,
-    ConfirmationModalComponent
+    ConfirmationModalComponent,
+    PaymentMethodSelectorComponent,
+    SensitivePipe
   ],
   templateUrl: './create-sale.component.html',
   styleUrls: ['./create-sale.component.scss']
@@ -47,11 +51,12 @@ export class CreateSaleComponent implements OnInit {
   authService = inject(AuthService);
 
   branchCode = '';
-  saleDate = new Date().toISOString().slice(0, 16);
+  saleDate = '';
   customerName = '';
   customerPhone = '';
   notes = '';
-  paymentMethod: PaymentMethod = PaymentMethod.Cash;
+  paymentDetails = signal<PaymentDetail[]>([{ method: PaymentMethod.Cash, amount: 0 }]);
+  paymentValid = signal(true);
   lines = signal<SaleLineForm[]>([]);
   loading = signal(false);
 
@@ -62,6 +67,8 @@ export class CreateSaleComponent implements OnInit {
   @ViewChild(ConfirmationModalComponent) confirmationModal?: ConfirmationModalComponent;
   isModalOpen = signal(false);
   confirmationData = signal<ConfirmationData | null>(null);
+
+  readonly saleTotal = signal(0);
 
   branchOptions = computed<SelectOption[]>(() =>
     this.branches().map(branch => ({
@@ -78,13 +85,6 @@ export class CreateSaleComponent implements OnInit {
       subtitle: `${item.description} [${item.classification}]`
     }))
   );
-
-  paymentMethodOptions: SelectOption[] = [
-    { value: PaymentMethod.Cash, label: 'Cash' },
-    { value: PaymentMethod.Card, label: 'Card' },
-    { value: PaymentMethod.AcimaShortTermCredit, label: 'Acima Short-Term Credit' },
-    { value: PaymentMethod.AccountsReceivable, label: 'Accounts Receivable' }
-  ];
 
   ngOnInit(): void {
     this.loadBranches();
@@ -110,7 +110,7 @@ export class CreateSaleComponent implements OnInit {
     this.lines.update(lines => [
       ...lines,
       {
-        itemId: '',
+        itemReference: '',
         itemCode: '',
         description: '',
         classification: 'Good',
@@ -121,15 +121,17 @@ export class CreateSaleComponent implements OnInit {
         availableStock: undefined
       }
     ]);
+    this.recalcTotal();
   }
 
   removeLine(index: number): void {
     this.lines.update(lines => lines.filter((_, i) => i !== index));
+    this.recalcTotal();
   }
 
   onItemSelected(index: number): void {
     const line = this.lines()[index];
-    const item = this.items().find(i => i.id === line.itemId);
+    const item = this.items().find(i => i.id === line.itemReference);
 
     if (item) {
       this.lines.update(lines => {
@@ -175,7 +177,7 @@ export class CreateSaleComponent implements OnInit {
       line.itemCode.trim().toUpperCase()
     ).subscribe({
       next: (summary) => {
-        const entry = summary.entries.find(e => e.itemCondition === line.condition);
+        const entry = summary.entries.find(e => e.condition === line.condition);
         const available = entry ? (entry.onHand - entry.reserved) : 0;
 
         this.lines.update(lines => {
@@ -196,6 +198,7 @@ export class CreateSaleComponent implements OnInit {
 
   getStockError(line: SaleLineForm): string {
     if (line.classification !== 'Good') return '';
+    if (line.condition === ItemCondition.New && line.allowWithoutStock) return '';
     if (line.availableStock === undefined) return '';
     if (line.quantity > line.availableStock) {
       return `Insufficient stock (available: ${line.availableStock})`;
@@ -206,9 +209,9 @@ export class CreateSaleComponent implements OnInit {
   isFormValid(): boolean {
     if (this.lines().length === 0) return false;
 
-    return this.lines().every(line => {
+    const linesValid = this.lines().every(line => {
       const hasValidFields =
-        line.itemId.trim() !== '' &&
+        line.itemReference.trim() !== '' &&
         line.quantity > 0 &&
         line.unitPrice >= 0;
 
@@ -218,11 +221,14 @@ export class CreateSaleComponent implements OnInit {
 
       const hasValidStock =
         line.classification === 'Service' ||
+        (line.condition === ItemCondition.New && line.allowWithoutStock) ||
         line.availableStock === undefined ||
         line.quantity <= line.availableStock;
 
       return hasValidFields && hasValidCondition && hasValidStock;
     });
+
+    return linesValid && this.paymentValid();
   }
 
   onSubmit(): void {
@@ -244,7 +250,9 @@ export class CreateSaleComponent implements OnInit {
       condition: line.condition !== undefined ? (line.condition === ItemCondition.New ? 'New' : 'Used') : undefined
     }));
 
-    const totalAmount = this.lines().reduce((sum, line) => sum + this.calculateLineTotal(line), 0);
+    const total = this.saleTotal();
+    const details = this.paymentDetails();
+    const isSplit = details.length >= 2;
 
     this.confirmationData.set({
       type: 'Sale',
@@ -252,9 +260,11 @@ export class CreateSaleComponent implements OnInit {
       items: confirmationItems,
       totalItems: this.lines().length,
       totalQuantity: this.lines().reduce((sum, line) => sum + line.quantity, 0),
-      totalAmount: totalAmount,
+      totalAmount: total,
       currency: this.lines()[0]?.currency.toString() || 'USD',
-      paymentMethod: this.getPaymentMethodLabel(this.paymentMethod),
+      paymentMethod: isSplit
+        ? details.map(d => `${d.method} ($${d.amount.toFixed(2)})`).join(', ')
+        : this.getPaymentMethodLabel(details[0]?.method || PaymentMethod.Cash),
       notes: this.notes || undefined
     });
 
@@ -270,23 +280,33 @@ export class CreateSaleComponent implements OnInit {
   }
 
   private executeSubmit(): void {
+    const details = this.paymentDetails();
+    const total = this.saleTotal();
+    const isSplit = details.length >= 2;
+
     const request = {
       branchCode: this.branchCode || undefined,
-      saleDateUtc: convertEasternToUtc(this.saleDate),
+      saleDateUtc: this.saleDate ? localToUtcIso(this.saleDate) : undefined,
       lines: this.lines().map(line => ({
-        itemId: line.itemId,
+        itemReference: line.itemReference,
         itemCode: line.itemCode,
         description: line.description,
         classification: line.classification,
         condition: line.condition,
         quantity: line.quantity,
         unitPrice: line.unitPrice,
-        currency: line.currency
+        currency: line.currency,
+        allowWithoutStock: line.allowWithoutStock || false
       })),
       customerName: this.customerName || undefined,
       customerPhone: this.customerPhone || undefined,
       notes: this.notes || undefined,
-      paymentMethod: this.paymentMethod
+      paymentMethod: isSplit ? PaymentMethod.Split : (details[0]?.method || PaymentMethod.Cash),
+      paymentDetails: details.map(pd => ({
+        method: pd.method,
+        amount: isSplit ? pd.amount : total,
+        checkNumber: pd.checkNumber
+      }))
     };
 
     this.salesService.createSale(request).subscribe({
@@ -297,29 +317,41 @@ export class CreateSaleComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to create sale:', err);
-        const errorMessage = err.error?.message || 'Failed to create sale. Please try again.';
+        const errorMessage = err.error?.errorMessage || err.error?.message || 'Failed to create sale. Please try again.';
         this.confirmationModal?.setError(errorMessage);
       }
     });
   }
 
   private getPaymentMethodLabel(method: PaymentMethod): string {
-    const option = this.paymentMethodOptions.find(opt => opt.value === method);
-    return option?.label || method.toString();
+    const labels: Record<string, string> = {
+      Cash: 'Cash', Card: 'Card', Check: 'Check',
+      Transfer: 'Transfer', Split: 'Split Payment'
+    };
+    return labels[method] || method.toString();
   }
 
   postSale(saleId: string): void {
     this.salesService.postSale(saleId).subscribe({
       next: () => {
         this.toastService.success('Sale posted successfully');
-        this.router.navigate(['/sales', saleId]);
+        this.router.navigate(['/sale-details'], { queryParams: { id: saleId } });
       },
       error: (err) => {
         console.error('Failed to post sale:', err);
-        this.toastService.warning('Sale created but failed to post. View in sales list.');
-        this.router.navigate(['/sales']);
+        const errorMessage = err.error?.errorMessage || err.error?.message || 'Sale created but failed to post.';
+        this.toastService.warning(errorMessage);
+        this.router.navigate(['/sale-details'], { queryParams: { id: saleId } });
       }
     });
+  }
+
+  onPaymentDetailsChange(details: PaymentDetail[]): void {
+    this.paymentDetails.set(details);
+  }
+
+  onPaymentValidityChange(valid: boolean): void {
+    this.paymentValid.set(valid);
   }
 
   onCancel(): void {
@@ -328,5 +360,11 @@ export class CreateSaleComponent implements OnInit {
 
   calculateLineTotal(line: SaleLineForm): number {
     return line.quantity * line.unitPrice;
+  }
+
+  recalcTotal(): void {
+    this.saleTotal.set(
+      this.lines().reduce((sum, l) => sum + l.quantity * l.unitPrice, 0)
+    );
   }
 }

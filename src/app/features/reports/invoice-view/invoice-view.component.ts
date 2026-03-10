@@ -5,27 +5,35 @@ import { ReportsService } from '../../../core/services/reports.service';
 import { Invoice } from '../../../core/models/report.models';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
-import { LucideAngularModule, FileText, LucideIconProvider, LUCIDE_ICONS } from 'lucide-angular';
+import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
+import { SensitivePipe } from '../../../shared/pipes/sensitive.pipe';
+import { LucideAngularModule, FileText, Printer, LucideIconProvider, LUCIDE_ICONS } from 'lucide-angular';
 
 @Component({
   selector: 'app-invoice-view',
   standalone: true,
-  imports: [CommonModule, CardComponent, ButtonComponent, LucideAngularModule],
+  imports: [CommonModule, CardComponent, ButtonComponent, LucideAngularModule, EasternTimePipe, SensitivePipe],
   providers: [
     {
       provide: LUCIDE_ICONS,
       multi: true,
-      useValue: new LucideIconProvider({ FileText })
+      useValue: new LucideIconProvider({ FileText, Printer })
     }
   ],
   template: `
     <div class="invoice-view">
       <div class="header">
-        <h1>Invoice</h1>
-        <app-button variant="danger" (click)="downloadPdf()" [disabled]="loading()">
-          <lucide-icon name="file-text" [size]="16"></lucide-icon>
-          Download PDF
-        </app-button>
+        <h1>{{ invoice()?.documentType || 'Invoice' }}</h1>
+        <div class="header-actions">
+          <app-button variant="primary" (click)="printInvoice()" [disabled]="loading()">
+            <lucide-icon name="printer" [size]="16"></lucide-icon>
+            Print
+          </app-button>
+          <app-button variant="danger" (click)="downloadPdf()" [disabled]="loading()">
+            <lucide-icon name="file-text" [size]="16"></lucide-icon>
+            Download PDF
+          </app-button>
+        </div>
       </div>
 
       <app-card *ngIf="!loading() && invoice()">
@@ -45,11 +53,20 @@ import { LucideAngularModule, FileText, LucideIconProvider, LUCIDE_ICONS } from 
           <div class="invoice-details">
             <div class="details-row">
               <div>
-                <h3>INVOICE</h3>
+                <h3>{{ invoice()?.documentType || 'INVOICE' }}</h3>
                 <p><strong>Invoice #:</strong> {{ invoice()?.invoiceNumber }}</p>
-                <p><strong>Date:</strong> {{ invoice()?.invoiceDateUtc | date:'MM/dd/yyyy' }}</p>
+                <p><strong>Date:</strong> {{ invoice()?.invoiceDateUtc | easternTime:'short' }}</p>
                 <p><strong>Branch:</strong> {{ invoice()?.branchCode }} - {{ invoice()?.branchName }}</p>
-                <p><strong>Payment Method:</strong> {{ invoice()?.paymentMethod }}</p>
+                <p *ngIf="!invoice()?.paymentDetails || invoice()!.paymentDetails!.length === 0">
+                  <strong>Payment Method:</strong> {{ invoice()?.paymentMethod }}
+                </p>
+                <div *ngIf="invoice()?.paymentDetails && invoice()!.paymentDetails!.length > 0">
+                  <p><strong>Payment Methods:</strong></p>
+                  <p *ngFor="let pd of invoice()!.paymentDetails" style="margin-left: 1rem; font-size: 0.9rem;">
+                    {{ pd.method }}: {{ pd.amount | number:'1.2-2' | sensitive }}
+                    <span *ngIf="pd.checkNumber"> (Check #{{ pd.checkNumber }})</span>
+                  </p>
+                </div>
               </div>
               <div class="bill-to">
                 <h4>BILL TO</h4>
@@ -84,8 +101,8 @@ import { LucideAngularModule, FileText, LucideIconProvider, LUCIDE_ICONS } from 
                   <td>{{ line.description }}</td>
                   <td>{{ line.condition || '-' }}</td>
                   <td class="number">{{ line.quantity }}</td>
-                  <td class="number">{{ line.currency }} {{ line.unitPrice | number:'1.2-2' }}</td>
-                  <td class="number">{{ line.currency }} {{ line.lineTotal | number:'1.2-2' }}</td>
+                  <td class="number">{{ line.currency }} {{ line.unitPrice | number:'1.2-2' | sensitive }}</td>
+                  <td class="number">{{ line.currency }} {{ line.lineTotal | number:'1.2-2' | sensitive }}</td>
                   <td class="center">
                     <span *ngIf="line.isTaxable">Yes</span>
                     <span *ngIf="!line.isTaxable">No</span>
@@ -105,31 +122,31 @@ import { LucideAngularModule, FileText, LucideIconProvider, LUCIDE_ICONS } from 
           <div class="totals" *ngIf="invoice()?.totals as totals">
             <div class="totals-row">
               <span>Subtotal:</span>
-              <span>{{ getCurrency() }} {{ totals.subtotal | number:'1.2-2' }}</span>
+              <span>{{ getCurrency() }} {{ totals.subtotal | number:'1.2-2' | sensitive }}</span>
             </div>
             <div class="totals-row" *ngIf="totals.taxableBase > 0">
               <span>Taxable Base:</span>
-              <span>{{ getCurrency() }} {{ totals.taxableBase | number:'1.2-2' }}</span>
+              <span>{{ getCurrency() }} {{ totals.taxableBase | number:'1.2-2' | sensitive }}</span>
             </div>
             <div class="totals-row" *ngIf="totals.salesTaxAmount > 0">
               <span>Sales Tax ({{ (totals.salesTaxRate * 100).toFixed(0) }}%):</span>
-              <span>{{ getCurrency() }} {{ totals.salesTaxAmount | number:'1.2-2' }}</span>
+              <span>{{ getCurrency() }} {{ totals.salesTaxAmount | number:'1.2-2' | sensitive }}</span>
             </div>
             <div class="totals-row" *ngIf="totals.discount > 0">
               <span>Discount:</span>
-              <span>-{{ getCurrency() }} {{ totals.discount | number:'1.2-2' }}</span>
+              <span>-{{ getCurrency() }} {{ totals.discount | number:'1.2-2' | sensitive }}</span>
             </div>
             <div class="totals-row grand-total">
               <span><strong>Grand Total:</strong></span>
-              <span><strong>{{ getCurrency() }} {{ totals.grandTotal | number:'1.2-2' }}</strong></span>
+              <span><strong>{{ getCurrency() }} {{ totals.grandTotal | number:'1.2-2' | sensitive }}</strong></span>
             </div>
             <div class="totals-row" *ngIf="totals.amountPaid > 0">
               <span>Amount Paid:</span>
-              <span>{{ getCurrency() }} {{ totals.amountPaid | number:'1.2-2' }}</span>
+              <span>{{ getCurrency() }} {{ totals.amountPaid | number:'1.2-2' | sensitive }}</span>
             </div>
             <div class="totals-row amount-due">
               <span><strong>Amount Due:</strong></span>
-              <span><strong>{{ getCurrency() }} {{ totals.amountDue | number:'1.2-2' }}</strong></span>
+              <span><strong>{{ getCurrency() }} {{ totals.amountDue | number:'1.2-2' | sensitive }}</strong></span>
             </div>
           </div>
         </div>
@@ -155,6 +172,12 @@ import { LucideAngularModule, FileText, LucideIconProvider, LUCIDE_ICONS } from 
 
     .header h1 {
       margin: 0;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
     }
 
     .invoice-content {
@@ -310,6 +333,10 @@ export class InvoiceViewComponent implements OnInit {
       },
       error: (err) => console.error('Failed to download PDF', err)
     });
+  }
+
+  printInvoice(): void {
+    window.print();
   }
 
   getCurrency(): string {

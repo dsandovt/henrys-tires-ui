@@ -31,6 +31,25 @@
   gap: $spacing-4;
 }
 
+.privacy-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  border-radius: $border-radius-full;
+  color: $color-gray-500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background-color: $color-gray-100;
+    color: $color-gray-700;
+  }
+}
+
 .branch-indicator {
   display: flex;
   align-items: center;

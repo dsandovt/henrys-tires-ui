@@ -3,18 +3,21 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReportsService } from '../../../core/services/reports.service';
 import { BranchesService } from '../../../core/services/branches.service';
+import { ToastService } from '../../../shared/components/toast/toast.service';
 import { InventoryMovementsReport } from '../../../core/models/report.models';
 import { Branch } from '../../../core/models/inventory.models';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { SelectComponent } from '../../../shared/components/select/select.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
+import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
+import { SensitivePipe } from '../../../shared/pipes/sensitive.pipe';
 import { LucideAngularModule, Download, LucideIconProvider, LUCIDE_ICONS } from 'lucide-angular';
 
 @Component({
   selector: 'app-inventory-movements',
   standalone: true,
-  imports: [CommonModule, FormsModule, CardComponent, ButtonComponent, SelectComponent, InputComponent, LucideAngularModule],
+  imports: [CommonModule, FormsModule, CardComponent, ButtonComponent, SelectComponent, InputComponent, LucideAngularModule, EasternTimePipe, SensitivePipe],
   providers: [
     {
       provide: LUCIDE_ICONS,
@@ -62,21 +65,21 @@ import { LucideAngularModule, Download, LucideIconProvider, LUCIDE_ICONS } from 
 
         <div *ngIf="!loading() && report()">
           <div class="report-info">
-            <p><strong>Period:</strong> {{ formatDate(report()?.fromDateUtc) }} - {{ formatDate(report()?.toDateUtc) }}</p>
+            <p><strong>Period:</strong> {{ report()?.fromDateUtc | easternTime:'date' }} - {{ report()?.toDateUtc | easternTime:'date' }}</p>
             <p><strong>Total Transactions:</strong> {{ report()?.totalCount }}</p>
           </div>
 
           <div class="transactions-list">
             <div *ngFor="let transaction of report()?.transactions" class="transaction-card">
               <div class="transaction-header">
-                <h3>{{ transaction.transactionNumber }}</h3>
+                <h3>{{ transaction.number }}</h3>
                 <span class="status-badge" [class]="transaction.status.toLowerCase()">{{ transaction.status }}</span>
               </div>
               <div class="transaction-details">
                 <p><strong>Type:</strong> {{ transaction.type }}</p>
                 <p><strong>Branch:</strong> {{ transaction.branchCode }}</p>
-                <p><strong>Date:</strong> {{ transaction.transactionDateUtc | date:'MM/dd/yyyy' }}</p>
-                <p *ngIf="transaction.committedAtUtc"><strong>Committed:</strong> {{ transaction.committedAtUtc | date:'MM/dd/yyyy' }}</p>
+                <p><strong>Date:</strong> {{ transaction.transactionDateUtc | easternTime:'short' }}</p>
+                <p *ngIf="transaction.statusHistory?.length"><strong>Last Status:</strong> {{ transaction.statusHistory[transaction.statusHistory.length - 1].status }} — {{ transaction.statusHistory[transaction.statusHistory.length - 1].date | easternTime:'short' }}</p>
               </div>
               <div class="transaction-lines">
                 <table>
@@ -94,8 +97,8 @@ import { LucideAngularModule, Download, LucideIconProvider, LUCIDE_ICONS } from 
                       <td>{{ line.itemCode }}</td>
                       <td>{{ line.condition }}</td>
                       <td class="number">{{ line.quantity }}</td>
-                      <td class="number">{{ line.currency }} {{ line.unitPrice | number:'1.2-2' }}</td>
-                      <td class="number">{{ line.currency }} {{ line.lineTotal | number:'1.2-2' }}</td>
+                      <td class="number">{{ line.currency }} {{ line.unitPrice | number:'1.2-2' | sensitive }}</td>
+                      <td class="number">{{ line.currency }} {{ line.lineTotal | number:'1.2-2' | sensitive }}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -231,6 +234,7 @@ import { LucideAngularModule, Download, LucideIconProvider, LUCIDE_ICONS } from 
 export class InventoryMovementsComponent implements OnInit {
   private reportsService = inject(ReportsService);
   private branchesService = inject(BranchesService);
+  private toastService = inject(ToastService);
 
   report = signal<InventoryMovementsReport | null>(null);
   loading = signal(false);
@@ -247,15 +251,18 @@ export class InventoryMovementsComponent implements OnInit {
 
   typeOptions = [
     { value: '', label: 'All Types' },
-    { value: 'TransferIn', label: 'Transfer In' },
-    { value: 'TransferOut', label: 'Transfer Out' },
-    { value: 'Adjustment', label: 'Adjustment' }
+    { value: 'PurchaseOrder', label: 'Purchase Order' },
+    { value: 'Sale', label: 'Sale' },
+    { value: 'StockAdjustment', label: 'Stock Adjustment' },
+    { value: 'StockLoss', label: 'Stock Loss' },
+    { value: 'BranchTransfer', label: 'Branch Transfer' }
   ];
 
   statusOptions = [
     { value: '', label: 'All Statuses' },
-    { value: 'Pending', label: 'Pending' },
-    { value: 'Committed', label: 'Committed' }
+    { value: 'Draft', label: 'Draft' },
+    { value: 'Committed', label: 'Committed' },
+    { value: 'Cancelled', label: 'Cancelled' }
   ];
 
   ngOnInit() {
@@ -275,6 +282,11 @@ export class InventoryMovementsComponent implements OnInit {
   }
 
   loadReport() {
+    if (this.fromDate && this.toDate && this.toDate < this.fromDate) {
+      this.toastService.danger('"To Date" cannot be before "From Date".');
+      return;
+    }
+
     this.loading.set(true);
 
     const params = {
@@ -315,7 +327,4 @@ export class InventoryMovementsComponent implements OnInit {
     });
   }
 
-  formatDate(date?: string): string {
-    return date ? new Date(date).toLocaleDateString() : 'N/A';
-  }
 }

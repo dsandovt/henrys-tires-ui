@@ -8,6 +8,7 @@ import { CardComponent } from '../../../../shared/components/card/card.component
 import { InputComponent } from '../../../../shared/components/input/input.component';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
 import { PriceFormModalComponent } from '../price-form-modal/price-form-modal.component';
+import { formatEasternDate } from '../../../../core/utils/timezone.utils';
 
 @Component({
   selector: 'app-prices-list',
@@ -112,11 +113,6 @@ export class PricesListComponent implements OnInit {
   }
 
   formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    return formatEasternDate(dateString);
   }
 }

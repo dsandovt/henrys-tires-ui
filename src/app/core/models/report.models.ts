@@ -1,3 +1,5 @@
+import { StatusHistoryEntry } from './inventory.models';
+
 // Stock Report Models
 export interface StockReportRow {
   itemCode: string;
@@ -70,6 +72,7 @@ export interface Invoice {
   branchCode: string;
   branchName: string;
   paymentMethod: string;
+  paymentDetails?: { method: string; amount: number; checkNumber?: string }[];
   customerName?: string;
   customerNumber?: string;
   customerPhone?: string;
@@ -79,6 +82,39 @@ export interface Invoice {
   lines: InvoiceLine[];
   totals: InvoiceTotals;
   generatedAtUtc: string;
+  documentType?: string;
+}
+
+// Sales Report Models
+export interface SalesReportRow {
+  saleNumber: string;
+  branchCode: string;
+  branchName: string;
+  saleDateUtc: string;
+  customerName?: string;
+  lineCount: number;
+  linesSummary: string;
+  paymentMethod: string;
+  total: number;
+  currency: string;
+  status: string;
+}
+
+export interface SalesReportTotals {
+  grandTotal: number;
+  totalSales: number;
+  totalItems: number;
+}
+
+export interface SalesReport {
+  generatedAtUtc: string;
+  fromDateUtc?: string;
+  toDateUtc?: string;
+  branchCode?: string;
+  branchName?: string;
+  rows: SalesReportRow[];
+  totals: SalesReportTotals;
+  totalCount: number;
 }
 
 // Inventory Movements Report Models
@@ -92,14 +128,104 @@ export interface MovementLine {
 }
 
 export interface MovementTransaction {
-  transactionNumber: string;
+  number: string;
   branchCode: string;
   type: string;
   status: string;
   transactionDateUtc: string;
-  committedAtUtc?: string;
+  statusHistory: StatusHistoryEntry[];
   notes?: string;
   lines: MovementLine[];
+}
+
+// Daily Close Report Models
+export interface PaymentBreakdown {
+  paymentMethod: string;
+  count: number;
+  amount: number;
+}
+
+export interface DailyCloseSummary {
+  totalSalesCount: number;
+  totalAmount: number;
+  currency: string;
+  paymentBreakdown: PaymentBreakdown[];
+}
+
+export interface DailyCloseDetail {
+  saleNumber: string;
+  saleDateUtc: string;
+  customerName?: string;
+  lineCount: number;
+  paymentMethod: string;
+  total: number;
+  currency: string;
+}
+
+export interface DailyCloseHourGroup {
+  hour: number;
+  hourLabel: string;
+  sales: DailyCloseDetail[];
+  hourTotal: number;
+  hourCount: number;
+}
+
+export interface DailyCloseReport {
+  generatedAtUtc: string;
+  dateUtc: string;
+  branchCode?: string;
+  branchName?: string;
+  groupBy: string;
+  summary: DailyCloseSummary;
+  details: DailyCloseDetail[];
+  hourGroups?: DailyCloseHourGroup[];
+}
+
+// Kardex Report Models
+export interface KardexEntry {
+  dateUtc: string;
+  referenceNumber: string;
+  type: string;
+  branchCode: string;
+  in: number;
+  out: number;
+  balance: number;
+  notes?: string;
+}
+
+export interface KardexReport {
+  generatedAtUtc: string;
+  itemCode: string;
+  itemDescription: string;
+  condition?: string;
+  branchCode?: string;
+  branchName?: string;
+  fromDateUtc?: string;
+  toDateUtc?: string;
+  entries: KardexEntry[];
+  totalIn: number;
+  totalOut: number;
+}
+
+// Sales by Volume Report Models
+export interface SalesByVolumeRow {
+  itemCode: string;
+  description: string;
+  condition: string;
+  quantitySold: number;
+  revenue: number;
+  currency: string;
+}
+
+export interface SalesByVolumeReport {
+  generatedAtUtc: string;
+  fromDateUtc?: string;
+  toDateUtc?: string;
+  branchCode?: string;
+  branchName?: string;
+  rows: SalesByVolumeRow[];
+  totalQuantitySold: number;
+  totalRevenue: number;
 }
 
 export interface InventoryMovementsReport {

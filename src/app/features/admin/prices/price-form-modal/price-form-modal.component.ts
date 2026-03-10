@@ -8,6 +8,8 @@ import { AlertComponent } from '../../../../shared/components/alert/alert.compon
 import { PricesService } from '../../../../core/services/prices.service';
 import { ToastService } from '../../../../shared/components/toast/toast.service';
 import { ConsumableItemPrice, Currency } from '../../../../core/models/inventory.models';
+import { formatEasternTimeShort } from '../../../../core/utils/timezone.utils';
+import { SensitivePipe } from '../../../../shared/pipes/sensitive.pipe';
 
 @Component({
   selector: 'app-price-form-modal',
@@ -18,7 +20,8 @@ import { ConsumableItemPrice, Currency } from '../../../../core/models/inventory
     ModalComponent,
     InputComponent,
     ButtonComponent,
-    AlertComponent
+    AlertComponent,
+    SensitivePipe
   ],
   template: `
     <app-modal #modal title="Update Item Price" subtitle="Modify the selling price for this product" (closeModal)="onCancel()">
@@ -84,7 +87,7 @@ import { ConsumableItemPrice, Currency } from '../../../../core/models/inventory
           <h4 class="history-title">Price History</h4>
           <div class="history-list">
             <div *ngFor="let entry of priceHistory()" class="history-entry">
-              <span class="history-price">{{ entry.currency }} {{ entry.price.toFixed(2) }}</span>
+              <span class="history-price">{{ entry.currency }} {{ entry.price.toFixed(2) | sensitive }}</span>
               <span class="history-date">{{ formatDate(entry.changedAtUtc) }}</span>
               <span class="history-user">{{ entry.changedBy }}</span>
             </div>
@@ -280,14 +283,7 @@ export class PriceFormModalComponent {
   }
 
   formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return formatEasternTimeShort(dateString);
   }
 
   private resetForm(): void {

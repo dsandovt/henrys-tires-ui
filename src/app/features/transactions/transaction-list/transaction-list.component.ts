@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { TransactionsService } from '../../../core/services/transactions.service';
 import { Transaction } from '../../../core/models/inventory.models';
 import { TableComponent } from '../../../shared/components/table/table.component';
@@ -56,6 +56,7 @@ import { formatEasternTimeShort } from '../../../core/utils/timezone.utils';
 })
 export class TransactionListComponent implements OnInit {
   private transactionsService = inject(TransactionsService);
+  private router = inject(Router);
   Math = Math;
   searchQuery = '';
   currentPage = signal(1);
@@ -63,9 +64,9 @@ export class TransactionListComponent implements OnInit {
   totalCount = signal(0);
   transactions = signal<Transaction[]>([]);
   columns = [
-    { key: 'transactionNumber', label: 'Transaction #', sortable: true },
+    { key: 'initiatorNumber', label: 'Initiator #', sortable: true },
+    { key: 'initiatorType', label: 'Initiator Type', sortable: true },
     { key: 'branchCode', label: 'Branch', sortable: true },
-    { key: 'type', label: 'Type', sortable: true },
     { key: 'status', label: 'Status', sortable: true },
     { key: 'transactionDateUtc', label: 'Date', sortable: true },
     { key: 'createdBy', label: 'Created By', sortable: true }
@@ -80,9 +81,11 @@ export class TransactionListComponent implements OnInit {
       search: this.searchQuery || undefined
     }).subscribe({
       next: (response) => {
-        // Transform dates to Eastern Time for display
+        // Transform for display: flatten initiator fields, format dates
         const transformedItems = response.items.map(item => ({
           ...item,
+          initiatorNumber: item.initiator?.referenceNumber ?? '-',
+          initiatorType: item.initiator?.entityDefinitionCode ?? '-',
           transactionDateUtc: formatEasternTimeShort(item.transactionDateUtc),
           createdAtUtc: formatEasternTimeShort(item.createdAtUtc)
         }));
@@ -113,6 +116,6 @@ export class TransactionListComponent implements OnInit {
   }
 
   viewTransaction(transaction: Transaction): void {
-    window.location.href = `/transactions/${transaction.id}`;
+    this.router.navigate(['/transaction-details'], { queryParams: { id: transaction.id } });
   }
 }

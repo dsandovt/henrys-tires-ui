@@ -1,11 +1,12 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BranchBreakdown } from '../../models/dashboard.models';
+import { SensitivePipe } from '../../../../shared/pipes/sensitive.pipe';
 
 @Component({
   selector: 'app-branch-breakdown-table',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, SensitivePipe],
   template: `
     <div class="table-container">
       <div *ngIf="loading" class="loading-state">
@@ -40,15 +41,15 @@ import { BranchBreakdown } from '../../models/dashboard.models';
             </td>
             <td class="td-amount td-sale">
               <span class="amount-currency">{{ branch.currency }}</span>
-              <span class="amount-value">{{ formatNumber(branch.salesTotal) }}</span>
+              <span class="amount-value">{{ formatNumber(branch.salesTotal) | sensitive }}</span>
             </td>
             <td class="td-amount td-purchase">
               <span class="amount-currency">{{ branch.currency }}</span>
-              <span class="amount-value">{{ formatNumber(branch.purchasesTotal) }}</span>
+              <span class="amount-value">{{ formatNumber(branch.purchasesTotal) | sensitive }}</span>
             </td>
             <td class="td-amount" [class.td-positive]="branch.netTotal > 0" [class.td-negative]="branch.netTotal < 0">
               <span class="amount-currency">{{ branch.currency }}</span>
-              <span class="amount-value">{{ formatNumber(branch.netTotal) }}</span>
+              <span class="amount-value">{{ formatNumber(branch.netTotal) | sensitive }}</span>
             </td>
             <td class="td-count">
               <span class="count-badge count-badge--sale">{{ branch.salesTransactionCount }}</span>

@@ -9,7 +9,7 @@ import { environment } from '../../../environments/environment';
   providedIn: 'root'
 })
 export class UsersService {
-  private readonly API_URL = `${environment.apiUrl}/v1/users`;
+  private readonly API_URL = `${environment.apiUrl}/v1/user`;
 
   constructor(private http: HttpClient) {}
 
@@ -68,6 +68,15 @@ export class UsersService {
    */
   toggleUserStatus(id: string): Observable<User> {
     return this.http.post<{ success: boolean; data: User }>(`${this.API_URL}/${id}/toggle-status`, {}).pipe(
+      map(response => response.data)
+    );
+  }
+
+  /**
+   * Reset user password (admin only)
+   */
+  resetPassword(userId: string, newPassword: string): Observable<void> {
+    return this.http.post<{ success: boolean; data: void }>(`${this.API_URL}/${userId}/reset-password`, { newPassword }).pipe(
       map(response => response.data)
     );
   }

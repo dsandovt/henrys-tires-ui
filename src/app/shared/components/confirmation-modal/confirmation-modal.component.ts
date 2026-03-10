@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ButtonComponent } from '../button/button.component';
+import { SensitivePipe } from '../../pipes/sensitive.pipe';
 
 export interface ConfirmationItem {
   sku: string;
@@ -26,7 +27,7 @@ export interface ConfirmationData {
 @Component({
   selector: 'app-confirmation-modal',
   standalone: true,
-  imports: [CommonModule, ButtonComponent],
+  imports: [CommonModule, ButtonComponent, SensitivePipe],
   template: `
     <div class="modal-overlay" *ngIf="isOpen()" (click)="onOverlayClick($event)">
       <div class="modal-container" (click)="$event.stopPropagation()">
@@ -77,7 +78,7 @@ export interface ConfirmationData {
                   <div class="col-condition" *ngIf="hasCondition()">{{ item.condition || '-' }}</div>
                   <div class="col-qty">{{ item.quantity }}</div>
                   <div class="col-price" *ngIf="hasPrice()">
-                    {{ item.currency }} {{ item.price | number:'1.2-2' }}
+                    {{ item.currency }} {{ item.price | number:'1.2-2' | sensitive }}
                   </div>
                 </div>
               </div>
@@ -95,7 +96,7 @@ export interface ConfirmationData {
             </div>
             <div class="total-row grand-total" *ngIf="confirmData.totalAmount !== undefined">
               <span class="label">Total Amount:</span>
-              <span class="value">{{ confirmData.currency }} {{ confirmData.totalAmount | number:'1.2-2' }}</span>
+              <span class="value">{{ confirmData.currency }} {{ confirmData.totalAmount | number:'1.2-2' | sensitive }}</span>
             </div>
           </div>
 
