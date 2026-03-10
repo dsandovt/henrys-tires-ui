@@ -2,7 +2,7 @@ import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap, catchError, throwError, map } from 'rxjs';
-import { LoginRequest, LoginResponse, CurrentUser, DecodedToken, Role } from '../models/auth.models';
+import { LoginRequest, LoginResponse, CurrentUser, DecodedToken } from '../models/auth.models';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
@@ -18,13 +18,15 @@ export class AuthService {
   // Public computed signals
   readonly currentUser = computed(() => this.currentUserSignal());
   readonly isAuthenticated = computed(() => this.currentUserSignal() !== null);
-  readonly userRole = computed(() => this.currentUserSignal()?.role);
-  readonly isAdmin = computed(() => this.currentUserSignal()?.role === Role.Admin);
-  readonly isSupervisor = computed(() => this.currentUserSignal()?.role === Role.Supervisor);
-  readonly isSeller = computed(() => this.currentUserSignal()?.role === Role.Seller);
-  readonly branchId = computed(() => this.currentUserSignal()?.branchId);
-  readonly branchCode = computed(() => this.currentUserSignal()?.branchCode);
-  readonly branchName = computed(() => this.currentUserSignal()?.branchName);
+  readonly roleCodes = computed(() => this.currentUserSignal()?.roleCodes ?? []);
+  readonly isAdmin = computed(() => this.hasRoleCode('ADMIN'));
+  readonly isSupervisor = computed(() => this.hasRoleCode('SUPERVISOR'));
+  readonly isSeller = computed(() => this.hasRoleCode('SELLER'));
+  readonly branchCodes = computed(() => this.currentUserSignal()?.branchCodes ?? []);
+  readonly branchNames = computed(() => this.currentUserSignal()?.branchNames ?? []);
+  // For backward compatibility — return first branch code/name
+  readonly branchCode = computed(() => this.currentUserSignal()?.branchCodes?.[0]);
+  readonly branchName = computed(() => this.currentUserSignal()?.branchNames?.[0]);
 
   constructor(
     private http: HttpClient,
@@ -77,21 +79,25 @@ export class AuthService {
   }
 
   /**
-   * Check if user has required role
+   * Check if user has a specific role code
    */
-  hasRole(requiredRole: Role | Role[]): boolean {
-    const userRole = this.currentUserSignal()?.role;
-    if (!userRole) return false;
+  hasRoleCode(code: string): boolean {
+    return this.currentUserSignal()?.roleCodes?.includes(code) ?? false;
+  }
 
-    const roles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
-    return roles.includes(userRole);
+  /**
+   * Check if user has any of the required role codes
+   */
+  hasAnyRole(codes: string[]): boolean {
+    const userRoles = this.currentUserSignal()?.roleCodes ?? [];
+    return codes.some(code => userRoles.includes(code));
   }
 
   /**
    * Check if user can override prices (Admin or Supervisor)
    */
   canOverridePrices(): boolean {
-    return this.hasRole([Role.Admin, Role.Supervisor]);
+    return this.hasAnyRole(['ADMIN', 'SUPERVISOR']);
   }
 
   /**
@@ -117,6 +123,14 @@ export class AuthService {
   }
 
   /**
+   * Normalize a JWT claim that can be a single string or array
+   */
+  private normalizeClaimArray(value: string | string[] | undefined): string[] {
+    if (!value) return [];
+    return Array.isArray(value) ? value : [value];
+  }
+
+  /**
    * Decode JWT token
    */
   private decodeToken(token: string): CurrentUser | null {
@@ -131,33 +145,21 @@ export class AuthService {
 
       return {
         username: decoded.nameid,
-        role: this.mapRole(decoded.role),
-        branchId: decoded.branchId,
-        branchCode: decoded.branchCode,
-        branchName: decoded.branchName,
+        firstName: decoded.firstName || '',
+        lastName: decoded.lastName || '',
+        middleName: decoded.middleName,
+        secondLastName: decoded.secondLastName,
+        email: decoded.email,
+        roleCodes: this.normalizeClaimArray(decoded.roleCodes),
+        groupReferences: this.normalizeClaimArray(decoded.groupReference),
+        branchReferences: this.normalizeClaimArray(decoded.branchReference),
+        branchCodes: this.normalizeClaimArray(decoded.branchCode),
+        branchNames: this.normalizeClaimArray(decoded.branchName),
         token: token
       };
     } catch (error) {
       console.error('Failed to decode token:', error);
       return null;
-    }
-  }
-
-  /**
-   * Map role string to Role enum
-   */
-  private mapRole(roleString: string): Role {
-    switch (roleString) {
-      case 'Admin':
-        return Role.Admin;
-      case 'Supervisor':
-        return Role.Supervisor;
-      case 'Seller':
-        return Role.Seller;
-      case 'StoreSeller':
-        return Role.StoreSeller;
-      default:
-        return Role.Seller;
     }
   }
 

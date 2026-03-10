@@ -7,7 +7,7 @@ import { ButtonComponent } from '../../../../shared/components/button/button.com
 import { AlertComponent } from '../../../../shared/components/alert/alert.component';
 import { UsersService } from '../../../../core/services/users.service';
 import { ToastService } from '../../../../shared/components/toast/toast.service';
-import { User, Branch } from '../../../../core/models/inventory.models';
+import { User, Branch, Group } from '../../../../core/models/inventory.models';
 
 @Component({
   selector: 'app-user-form-modal',
@@ -59,38 +59,90 @@ import { User, Branch } from '../../../../core/models/inventory.models';
           ></app-input>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Role *</label>
-          <select
-            [(ngModel)]="role"
-            name="role"
-            class="form-select"
-            [class.error]="roleError()"
-            required
-          >
-            <option value="">Select a role</option>
-            <option value="Admin">Admin</option>
-            <option value="Supervisor">Supervisor</option>
-            <option value="Seller">Seller</option>
-            <option value="StoreSeller">StoreSeller</option>
-            <option value="StockViewer">StockViewer</option>
-          </select>
-          <span *ngIf="roleError()" class="error-text">{{ roleError() }}</span>
+        <div class="form-row">
+          <div class="form-group">
+            <app-input
+              [(ngModel)]="firstName"
+              name="firstName"
+              label="First Name *"
+              type="text"
+              placeholder="Enter first name"
+              [required]="true"
+            ></app-input>
+          </div>
+          <div class="form-group">
+            <app-input
+              [(ngModel)]="middleName"
+              name="middleName"
+              label="Middle Name"
+              type="text"
+              placeholder="Enter middle name"
+            ></app-input>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <app-input
+              [(ngModel)]="lastName"
+              name="lastName"
+              label="Last Name *"
+              type="text"
+              placeholder="Enter last name"
+              [required]="true"
+            ></app-input>
+          </div>
+          <div class="form-group">
+            <app-input
+              [(ngModel)]="secondLastName"
+              name="secondLastName"
+              label="Second Last Name"
+              type="text"
+              placeholder="Enter second last name"
+            ></app-input>
+          </div>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Branch</label>
-          <select
-            [(ngModel)]="branchId"
-            name="branchId"
-            class="form-select"
-          >
-            <option value="">No branch assigned</option>
-            <option *ngFor="let branch of branches()" [value]="branch.id">
-              {{ branch.name }} ({{ branch.code }})
-            </option>
-          </select>
-          <p class="hint-text">Required for Seller, StoreSeller users</p>
+          <app-input
+            [(ngModel)]="email"
+            name="email"
+            label="Email"
+            type="email"
+            placeholder="Enter email"
+          ></app-input>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Groups *</label>
+          <div class="multi-select-list">
+            <label *ngFor="let group of groups()" class="checkbox-label">
+              <input
+                type="checkbox"
+                [checked]="selectedGroupReferences.includes(group.id)"
+                (change)="toggleGroup(group.id)"
+                class="checkbox"
+              />
+              <span>{{ group.name }} ({{ group.code }})</span>
+            </label>
+          </div>
+          <span *ngIf="groupError()" class="error-text">{{ groupError() }}</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Branches</label>
+          <div class="multi-select-list">
+            <label *ngFor="let branch of branches()" class="checkbox-label">
+              <input
+                type="checkbox"
+                [checked]="selectedBranchReferences.includes(branch.id)"
+                (change)="toggleBranch(branch.id)"
+                class="checkbox"
+              />
+              <span>{{ branch.name }} ({{ branch.code }})</span>
+            </label>
+          </div>
+          <p class="hint-text">Assign branches for non-admin users</p>
         </div>
 
         <div class="form-group">
@@ -132,6 +184,12 @@ import { User, Branch } from '../../../../core/models/inventory.models';
       margin-bottom: var(--space-4);
     }
 
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+    }
+
     .form-label {
       display: block;
       margin-bottom: var(--space-2);
@@ -140,26 +198,15 @@ import { User, Branch } from '../../../../core/models/inventory.models';
       color: #404040;
     }
 
-    .form-select {
-      width: 100%;
-      padding: 0.625rem 0.75rem;
-      font-size: 0.9375rem;
-      line-height: 1.5;
-      color: #404040;
-      background-color: #ffffff;
+    .multi-select-list {
+      max-height: 160px;
+      overflow-y: auto;
       border: 1px solid #d4d4d4;
       border-radius: 0.375rem;
-      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-    }
-
-    .form-select:focus {
-      outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
-    .form-select.error {
-      border-color: #dc2626;
+      padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
     }
 
     .checkbox-label {
@@ -167,7 +214,7 @@ import { User, Branch } from '../../../../core/models/inventory.models';
       align-items: center;
       gap: var(--space-2);
       cursor: pointer;
-      font-size: 0.9375rem;
+      font-size: 0.875rem;
       color: #404040;
     }
 
@@ -204,6 +251,7 @@ export class UserFormModalComponent {
   @ViewChild('modal') modal!: ModalComponent;
   @Output() userSaved = new EventEmitter<User>();
   @Input() branches = signal<Branch[]>([]);
+  @Input() groups = signal<Group[]>([]);
 
   private usersService = inject(UsersService);
   private toastService = inject(ToastService);
@@ -211,8 +259,13 @@ export class UserFormModalComponent {
   // Form fields
   username = '';
   password = '';
-  role = '';
-  branchId = '';
+  firstName = '';
+  middleName = '';
+  lastName = '';
+  secondLastName = '';
+  email = '';
+  selectedGroupReferences: string[] = [];
+  selectedBranchReferences: string[] = [];
   isActive = true;
 
   // State
@@ -220,7 +273,7 @@ export class UserFormModalComponent {
   error = signal('');
   usernameError = signal('');
   passwordError = signal('');
-  roleError = signal('');
+  groupError = signal('');
   isEditMode = signal(false);
   currentUser = signal<User | null>(null);
 
@@ -231,25 +284,33 @@ export class UserFormModalComponent {
 
   open(user?: User): void {
     if (user) {
-      // Edit mode
       this.isEditMode.set(true);
       this.currentUser.set(user);
       this.username = user.username;
       this.password = '';
-      this.role = user.role;
-      this.branchId = user.branchId || '';
+      this.firstName = user.firstName || '';
+      this.middleName = user.middleName || '';
+      this.lastName = user.lastName || '';
+      this.secondLastName = user.secondLastName || '';
+      this.email = user.email || '';
+      this.selectedGroupReferences = [...(user.groupReferences || [])];
+      this.selectedBranchReferences = [...(user.branchReferences || [])];
       this.isActive = user.isActive;
       this.modalTitle.set('Edit User');
       this.modalSubtitle.set('Update user information');
       this.submitButtonText.set('Save Changes');
     } else {
-      // Create mode
       this.isEditMode.set(false);
       this.currentUser.set(null);
       this.username = '';
       this.password = '';
-      this.role = '';
-      this.branchId = '';
+      this.firstName = '';
+      this.middleName = '';
+      this.lastName = '';
+      this.secondLastName = '';
+      this.email = '';
+      this.selectedGroupReferences = [];
+      this.selectedBranchReferences = [];
       this.isActive = true;
       this.modalTitle.set('Create New User');
       this.modalSubtitle.set('Add a new user to the system');
@@ -265,11 +326,31 @@ export class UserFormModalComponent {
     this.resetForm();
   }
 
+  toggleGroup(groupId: string): void {
+    const idx = this.selectedGroupReferences.indexOf(groupId);
+    if (idx >= 0) {
+      this.selectedGroupReferences = this.selectedGroupReferences.filter(id => id !== groupId);
+    } else {
+      this.selectedGroupReferences = [...this.selectedGroupReferences, groupId];
+    }
+  }
+
+  toggleBranch(branchId: string): void {
+    const idx = this.selectedBranchReferences.indexOf(branchId);
+    if (idx >= 0) {
+      this.selectedBranchReferences = this.selectedBranchReferences.filter(id => id !== branchId);
+    } else {
+      this.selectedBranchReferences = [...this.selectedBranchReferences, branchId];
+    }
+  }
+
   isFormValid(): boolean {
     const hasUsername = this.username.trim().length > 0;
     const hasPassword = this.isEditMode() || this.password.trim().length >= 6;
-    const hasRole = this.role.trim().length > 0;
-    return hasUsername && hasPassword && hasRole;
+    const hasFirstName = this.firstName.trim().length > 0;
+    const hasLastName = this.lastName.trim().length > 0;
+    const hasGroups = this.selectedGroupReferences.length > 0;
+    return hasUsername && hasPassword && hasFirstName && hasLastName && hasGroups;
   }
 
   validateForm(): boolean {
@@ -290,8 +371,8 @@ export class UserFormModalComponent {
       return false;
     }
 
-    if (!this.role.trim()) {
-      this.roleError.set('Role is required');
+    if (this.selectedGroupReferences.length === 0) {
+      this.groupError.set('At least one group is required');
       return false;
     }
 
@@ -302,7 +383,7 @@ export class UserFormModalComponent {
     this.error.set('');
     this.usernameError.set('');
     this.passwordError.set('');
-    this.roleError.set('');
+    this.groupError.set('');
   }
 
   onSubmit(): void {
@@ -324,8 +405,13 @@ export class UserFormModalComponent {
     this.usersService.createUser({
       username: this.username.trim(),
       password: this.password.trim(),
-      role: this.role,
-      branchId: this.branchId.trim() || undefined,
+      firstName: this.firstName.trim(),
+      middleName: this.middleName.trim() || undefined,
+      lastName: this.lastName.trim(),
+      secondLastName: this.secondLastName.trim() || undefined,
+      email: this.email.trim() || undefined,
+      groupReferences: this.selectedGroupReferences,
+      branchReferences: this.selectedBranchReferences,
       isActive: this.isActive
     }).subscribe({
       next: (user) => {
@@ -354,13 +440,15 @@ export class UserFormModalComponent {
     if (!userId) return;
 
     const updateData: any = {
-      role: this.role,
+      firstName: this.firstName.trim(),
+      middleName: this.middleName.trim() || undefined,
+      lastName: this.lastName.trim(),
+      secondLastName: this.secondLastName.trim() || undefined,
+      email: this.email.trim() || undefined,
+      groupReferences: this.selectedGroupReferences,
+      branchReferences: this.selectedBranchReferences,
       isActive: this.isActive
     };
-
-    if (this.branchId.trim()) {
-      updateData.branchId = this.branchId.trim();
-    }
 
     if (this.password.trim()) {
       updateData.password = this.password.trim();
@@ -388,8 +476,13 @@ export class UserFormModalComponent {
   private resetForm(): void {
     this.username = '';
     this.password = '';
-    this.role = '';
-    this.branchId = '';
+    this.firstName = '';
+    this.middleName = '';
+    this.lastName = '';
+    this.secondLastName = '';
+    this.email = '';
+    this.selectedGroupReferences = [];
+    this.selectedBranchReferences = [];
     this.isActive = true;
     this.clearErrors();
     this.loading.set(false);

@@ -8,7 +8,7 @@ import { environment } from '../../../environments/environment';
   providedIn: 'root',
 })
 export class BranchesService {
-  private readonly API_URL = `${environment.apiUrl}/branches`;
+  private readonly API_URL = `${environment.apiUrl}/branch`;
 
   constructor(private http: HttpClient) {}
 

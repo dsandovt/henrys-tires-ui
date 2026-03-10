@@ -9,7 +9,7 @@ import { environment } from '../../../environments/environment';
   providedIn: 'root'
 })
 export class PricesService {
-  private readonly API_URL = `${environment.apiUrl}/v1/prices`;
+  private readonly API_URL = `${environment.apiUrl}/v1/price`;
 
   constructor(private http: HttpClient) {}
 

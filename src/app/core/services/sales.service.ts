@@ -11,7 +11,7 @@ import { environment } from '../../../environments/environment';
 })
 export class SalesService {
   private http = inject(HttpClient);
-  private readonly API_URL = `${environment.apiUrl}/v1/sales`;
+  private readonly API_URL = `${environment.apiUrl}/v1/sale`;
 
   createSale(request: CreateSaleRequest): Observable<Sale> {
     return this.http.post<ApiResponse<Sale>>(this.API_URL, request)

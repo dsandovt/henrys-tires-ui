@@ -11,12 +11,13 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { SelectComponent } from '../../../shared/components/select/select.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
+import { SensitivePipe } from '../../../shared/pipes/sensitive.pipe';
 import { LucideAngularModule, Download, LucideIconProvider, LUCIDE_ICONS } from 'lucide-angular';
 
 @Component({
   selector: 'app-inventory-movements',
   standalone: true,
-  imports: [CommonModule, FormsModule, CardComponent, ButtonComponent, SelectComponent, InputComponent, LucideAngularModule, EasternTimePipe],
+  imports: [CommonModule, FormsModule, CardComponent, ButtonComponent, SelectComponent, InputComponent, LucideAngularModule, EasternTimePipe, SensitivePipe],
   providers: [
     {
       provide: LUCIDE_ICONS,
@@ -71,14 +72,14 @@ import { LucideAngularModule, Download, LucideIconProvider, LUCIDE_ICONS } from 
           <div class="transactions-list">
             <div *ngFor="let transaction of report()?.transactions" class="transaction-card">
               <div class="transaction-header">
-                <h3>{{ transaction.transactionNumber }}</h3>
+                <h3>{{ transaction.number }}</h3>
                 <span class="status-badge" [class]="transaction.status.toLowerCase()">{{ transaction.status }}</span>
               </div>
               <div class="transaction-details">
                 <p><strong>Type:</strong> {{ transaction.type }}</p>
                 <p><strong>Branch:</strong> {{ transaction.branchCode }}</p>
                 <p><strong>Date:</strong> {{ transaction.transactionDateUtc | easternTime:'short' }}</p>
-                <p *ngIf="transaction.committedAtUtc"><strong>Committed:</strong> {{ transaction.committedAtUtc | easternTime:'short' }}</p>
+                <p *ngIf="transaction.statusHistory?.length"><strong>Last Status:</strong> {{ transaction.statusHistory[transaction.statusHistory.length - 1].status }} — {{ transaction.statusHistory[transaction.statusHistory.length - 1].date | easternTime:'short' }}</p>
               </div>
               <div class="transaction-lines">
                 <table>
@@ -96,8 +97,8 @@ import { LucideAngularModule, Download, LucideIconProvider, LUCIDE_ICONS } from 
                       <td>{{ line.itemCode }}</td>
                       <td>{{ line.condition }}</td>
                       <td class="number">{{ line.quantity }}</td>
-                      <td class="number">{{ line.currency }} {{ line.unitPrice | number:'1.2-2' }}</td>
-                      <td class="number">{{ line.currency }} {{ line.lineTotal | number:'1.2-2' }}</td>
+                      <td class="number">{{ line.currency }} {{ line.unitPrice | number:'1.2-2' | sensitive }}</td>
+                      <td class="number">{{ line.currency }} {{ line.lineTotal | number:'1.2-2' | sensitive }}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -250,15 +251,18 @@ export class InventoryMovementsComponent implements OnInit {
 
   typeOptions = [
     { value: '', label: 'All Types' },
-    { value: 'In', label: 'Transfer In' },
-    { value: 'Out', label: 'Transfer Out' },
-    { value: 'Adjust', label: 'Adjustment' }
+    { value: 'PurchaseOrder', label: 'Purchase Order' },
+    { value: 'Sale', label: 'Sale' },
+    { value: 'StockAdjustment', label: 'Stock Adjustment' },
+    { value: 'StockLoss', label: 'Stock Loss' },
+    { value: 'BranchTransfer', label: 'Branch Transfer' }
   ];
 
   statusOptions = [
     { value: '', label: 'All Statuses' },
-    { value: 'Pending', label: 'Pending' },
-    { value: 'Committed', label: 'Committed' }
+    { value: 'Draft', label: 'Draft' },
+    { value: 'Committed', label: 'Committed' },
+    { value: 'Cancelled', label: 'Cancelled' }
   ];
 
   ngOnInit() {

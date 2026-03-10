@@ -6,7 +6,6 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { AlertComponent } from '../../../shared/components/alert/alert.component';
-import { Role } from '../../../core/models/auth.models';
 
 @Component({
   selector: 'app-login',
@@ -112,8 +111,7 @@ export class LoginComponent {
           this.loading.set(false);
 
           // Redirect based on role
-          const userRole = this.authService.userRole();
-          if (userRole === Role.Admin) {
+          if (this.authService.isAdmin()) {
             this.router.navigate(['/dashboard']);
           } else {
             this.router.navigate(['/stock']);

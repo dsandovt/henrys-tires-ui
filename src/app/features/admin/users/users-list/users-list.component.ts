@@ -1,10 +1,11 @@
-import { Component, inject, signal, OnInit, ViewChild, computed } from '@angular/core';
+import { Component, inject, signal, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UsersService } from '../../../../core/services/users.service';
 import { BranchesService } from '../../../../core/services/branches.service';
+import { GroupsService } from '../../../../core/services/groups.service';
 import { ToastService } from '../../../../shared/components/toast/toast.service';
-import { User, Branch } from '../../../../core/models/inventory.models';
+import { User, Branch, Group } from '../../../../core/models/inventory.models';
 import { CardComponent } from '../../../../shared/components/card/card.component';
 import { InputComponent } from '../../../../shared/components/input/input.component';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
@@ -27,26 +28,26 @@ import { ResetPasswordModalComponent } from '../reset-password-modal/reset-passw
           <thead>
             <tr>
               <th>Username</th>
-              <th>Role</th>
-              <th>Branch</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Groups</th>
               <th>Active</th>
-              <th>Created By</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let user of displayUsers()">
+            <tr *ngFor="let user of users()">
               <td>{{ user.username }}</td>
-              <td>{{ user.role }}</td>
-              <td>{{ user.branchId }}</td>
+              <td>{{ user.firstName }} {{ user.lastName }}</td>
+              <td>{{ user.email || '-' }}</td>
+              <td>{{ user.groupReferences.join(', ') || '-' }}</td>
               <td>{{ user.isActive ? 'Yes' : 'No' }}</td>
-              <td>{{ user.createdBy }}</td>
               <td class="actions-cell">
                 <button class="action-btn edit-btn" (click)="showEditDialog(user)">Edit</button>
                 <button class="action-btn reset-btn" (click)="showResetPasswordDialog(user)">Reset Password</button>
               </td>
             </tr>
-            <tr *ngIf="displayUsers().length === 0">
+            <tr *ngIf="users().length === 0">
               <td colspan="6" class="empty-message">No users found</td>
             </tr>
           </tbody>
@@ -61,7 +62,7 @@ import { ResetPasswordModalComponent } from '../reset-password-modal/reset-passw
         </div>
       </app-card>
 
-      <app-user-form-modal [branches]="branches" (userSaved)="onUserSaved()"></app-user-form-modal>
+      <app-user-form-modal [branches]="branches" [groups]="groups" (userSaved)="onUserSaved()"></app-user-form-modal>
       <app-reset-password-modal (passwordReset)="onUserSaved()"></app-reset-password-modal>
     </div>
   `,
@@ -91,6 +92,7 @@ export class UsersListComponent implements OnInit {
 
   private usersService = inject(UsersService);
   private branchesService = inject(BranchesService);
+  private groupsService = inject(GroupsService);
   private toastService = inject(ToastService);
   Math = Math;
   searchQuery = '';
@@ -99,27 +101,25 @@ export class UsersListComponent implements OnInit {
   totalCount = signal(0);
   users = signal<User[]>([]);
   branches = signal<Branch[]>([]);
-
-  // Computed signal to transform user data with readable branch names
-  displayUsers = computed(() => {
-    const branchMap = new Map(this.branches().map(b => [b.id, `${b.name} (${b.code})`]));
-    return this.users().map(user => ({
-      ...user,
-      branchId: user.branchId ? (branchMap.get(user.branchId) || user.branchId) : '-'
-    }));
-  });
+  groups = signal<Group[]>([]);
 
   ngOnInit(): void {
     this.loadBranches();
+    this.loadGroups();
     this.loadUsers();
   }
 
   loadBranches(): void {
     this.branchesService.getAllBranches().subscribe({
-      next: (branches: Branch[]) => {
-        this.branches.set(branches);
-      },
+      next: (branches: Branch[]) => this.branches.set(branches),
       error: (err: any) => console.error('Failed to load branches:', err)
+    });
+  }
+
+  loadGroups(): void {
+    this.groupsService.getAllGroups().subscribe({
+      next: (groups) => this.groups.set(groups),
+      error: (err: any) => console.error('Failed to load groups:', err)
     });
   }
 

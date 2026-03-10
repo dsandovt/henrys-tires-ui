@@ -1,24 +1,21 @@
 /**
- * Timezone utilities for converting UTC dates to Eastern Time (Newport News, VA)
- * Simple approach: subtract 5 hours from UTC (EST = UTC-5)
+ * Minimal date formatting utilities.
+ * The backend JSON converter already adjusts dates by the X-Timezone-Offset header,
+ * so response dates arrive pre-adjusted to Eastern Time.
+ * These functions only format — no timezone conversion.
  */
 
-const EST_OFFSET_HOURS = 5;
-
-/**
- * Subtract 5 hours from a UTC date to get Eastern Time
- */
-function toEastern(utcDateString: string): Date {
-  const date = new Date(utcDateString);
-  date.setHours(date.getHours() - EST_OFFSET_HOURS);
-  return date;
+function pad(n: number): string {
+  return n.toString().padStart(2, '0');
 }
 
 /**
- * Pad a number to 2 digits
+ * Parse a date string into a Date object.
+ * Appends 'Z' if missing so UTC getters read the pre-adjusted values as-is.
  */
-function pad(n: number): string {
-  return n.toString().padStart(2, '0');
+function toDate(dateString: string): Date {
+  const s = dateString.endsWith('Z') ? dateString : dateString + 'Z';
+  return new Date(s);
 }
 
 /**
@@ -31,7 +28,7 @@ export function formatEasternTime(
   if (!utcDateString) return '-';
 
   try {
-    const d = toEastern(utcDateString);
+    const d = toDate(utcDateString);
     if (isNaN(d.getTime())) return 'Invalid Date';
 
     const month = pad(d.getUTCMonth() + 1);
@@ -60,9 +57,6 @@ export function formatEasternTime(
   }
 }
 
-/**
- * Format with timezone: "12/21/2024, 03:45:30 PM EST"
- */
 export function formatEasternTimeWithZone(utcDateString: string | undefined | null): string {
   if (!utcDateString) return '-';
   const formatted = formatEasternTime(utcDateString, 'datetime');
@@ -70,52 +64,21 @@ export function formatEasternTimeWithZone(utcDateString: string | undefined | nu
   return `${formatted} EST`;
 }
 
-/**
- * Short format: "Dec 21, 2024, 3:45 PM"
- */
 export function formatEasternTimeShort(utcDateString: string | undefined | null): string {
   return formatEasternTime(utcDateString, 'short');
 }
 
-/**
- * Date only: "12/21/2024"
- */
 export function formatEasternDate(utcDateString: string | undefined | null): string {
   return formatEasternTime(utcDateString, 'date');
 }
 
-/**
- * Time only: "03:45:30 PM"
- */
 export function formatEasternTimeOnly(utcDateString: string | undefined | null): string {
   return formatEasternTime(utcDateString, 'time');
 }
 
 /**
- * Convert a datetime-local input value (Eastern Time) to UTC ISO string.
- * Adds 5 hours to convert EST -> UTC.
+ * Convert a datetime-local input value (user's local time) to a UTC ISO string for the API.
  */
-export function convertEasternToUtc(dateTimeLocalValue: string): string {
-  if (!dateTimeLocalValue) {
-    return new Date().toISOString();
-  }
-
-  const parts = dateTimeLocalValue.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
-  if (!parts) {
-    return new Date().toISOString();
-  }
-
-  const [, year, month, day, hour, minute] = parts;
-
-  // Create a UTC date from the parts, then add 5 hours (EST offset)
-  const date = new Date(Date.UTC(
-    parseInt(year),
-    parseInt(month) - 1,
-    parseInt(day),
-    parseInt(hour) + EST_OFFSET_HOURS,
-    parseInt(minute),
-    0
-  ));
-
-  return date.toISOString();
+export function localToUtcIso(dateTimeLocalValue: string): string {
+  return new Date(dateTimeLocalValue).toISOString();
 }

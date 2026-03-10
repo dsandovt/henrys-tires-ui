@@ -6,12 +6,13 @@ import { Invoice } from '../../../core/models/report.models';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
+import { SensitivePipe } from '../../../shared/pipes/sensitive.pipe';
 import { LucideAngularModule, FileText, Printer, LucideIconProvider, LUCIDE_ICONS } from 'lucide-angular';
 
 @Component({
   selector: 'app-invoice-view',
   standalone: true,
-  imports: [CommonModule, CardComponent, ButtonComponent, LucideAngularModule, EasternTimePipe],
+  imports: [CommonModule, CardComponent, ButtonComponent, LucideAngularModule, EasternTimePipe, SensitivePipe],
   providers: [
     {
       provide: LUCIDE_ICONS,
@@ -62,7 +63,7 @@ import { LucideAngularModule, FileText, Printer, LucideIconProvider, LUCIDE_ICON
                 <div *ngIf="invoice()?.paymentDetails && invoice()!.paymentDetails!.length > 0">
                   <p><strong>Payment Methods:</strong></p>
                   <p *ngFor="let pd of invoice()!.paymentDetails" style="margin-left: 1rem; font-size: 0.9rem;">
-                    {{ pd.method }}: {{ pd.amount | number:'1.2-2' }}
+                    {{ pd.method }}: {{ pd.amount | number:'1.2-2' | sensitive }}
                     <span *ngIf="pd.checkNumber"> (Check #{{ pd.checkNumber }})</span>
                   </p>
                 </div>
@@ -100,8 +101,8 @@ import { LucideAngularModule, FileText, Printer, LucideIconProvider, LUCIDE_ICON
                   <td>{{ line.description }}</td>
                   <td>{{ line.condition || '-' }}</td>
                   <td class="number">{{ line.quantity }}</td>
-                  <td class="number">{{ line.currency }} {{ line.unitPrice | number:'1.2-2' }}</td>
-                  <td class="number">{{ line.currency }} {{ line.lineTotal | number:'1.2-2' }}</td>
+                  <td class="number">{{ line.currency }} {{ line.unitPrice | number:'1.2-2' | sensitive }}</td>
+                  <td class="number">{{ line.currency }} {{ line.lineTotal | number:'1.2-2' | sensitive }}</td>
                   <td class="center">
                     <span *ngIf="line.isTaxable">Yes</span>
                     <span *ngIf="!line.isTaxable">No</span>
@@ -121,31 +122,31 @@ import { LucideAngularModule, FileText, Printer, LucideIconProvider, LUCIDE_ICON
           <div class="totals" *ngIf="invoice()?.totals as totals">
             <div class="totals-row">
               <span>Subtotal:</span>
-              <span>{{ getCurrency() }} {{ totals.subtotal | number:'1.2-2' }}</span>
+              <span>{{ getCurrency() }} {{ totals.subtotal | number:'1.2-2' | sensitive }}</span>
             </div>
             <div class="totals-row" *ngIf="totals.taxableBase > 0">
               <span>Taxable Base:</span>
-              <span>{{ getCurrency() }} {{ totals.taxableBase | number:'1.2-2' }}</span>
+              <span>{{ getCurrency() }} {{ totals.taxableBase | number:'1.2-2' | sensitive }}</span>
             </div>
             <div class="totals-row" *ngIf="totals.salesTaxAmount > 0">
               <span>Sales Tax ({{ (totals.salesTaxRate * 100).toFixed(0) }}%):</span>
-              <span>{{ getCurrency() }} {{ totals.salesTaxAmount | number:'1.2-2' }}</span>
+              <span>{{ getCurrency() }} {{ totals.salesTaxAmount | number:'1.2-2' | sensitive }}</span>
             </div>
             <div class="totals-row" *ngIf="totals.discount > 0">
               <span>Discount:</span>
-              <span>-{{ getCurrency() }} {{ totals.discount | number:'1.2-2' }}</span>
+              <span>-{{ getCurrency() }} {{ totals.discount | number:'1.2-2' | sensitive }}</span>
             </div>
             <div class="totals-row grand-total">
               <span><strong>Grand Total:</strong></span>
-              <span><strong>{{ getCurrency() }} {{ totals.grandTotal | number:'1.2-2' }}</strong></span>
+              <span><strong>{{ getCurrency() }} {{ totals.grandTotal | number:'1.2-2' | sensitive }}</strong></span>
             </div>
             <div class="totals-row" *ngIf="totals.amountPaid > 0">
               <span>Amount Paid:</span>
-              <span>{{ getCurrency() }} {{ totals.amountPaid | number:'1.2-2' }}</span>
+              <span>{{ getCurrency() }} {{ totals.amountPaid | number:'1.2-2' | sensitive }}</span>
             </div>
             <div class="totals-row amount-due">
               <span><strong>Amount Due:</strong></span>
-              <span><strong>{{ getCurrency() }} {{ totals.amountDue | number:'1.2-2' }}</strong></span>
+              <span><strong>{{ getCurrency() }} {{ totals.amountDue | number:'1.2-2' | sensitive }}</strong></span>
             </div>
           </div>
         </div>

@@ -7,16 +7,20 @@ import { CardComponent } from '../../../shared/components/card/card.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
+import { SensitivePipe } from '../../../shared/pipes/sensitive.pipe';
+import { CreateSaleComponent } from '../create-sale/create-sale.component';
 
 @Component({
   selector: 'app-sale-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, CardComponent, BadgeComponent, ButtonComponent, EasternTimePipe],
+  imports: [CommonModule, RouterModule, CardComponent, BadgeComponent, ButtonComponent, EasternTimePipe, SensitivePipe, CreateSaleComponent],
   template: `
-    <div class="sale-details" *ngIf="sale()">
+    <app-create-sale *ngIf="isNewMode" />
+
+    <div class="sale-details" *ngIf="!isNewMode && sale()">
       <div class="header">
         <div>
-          <h1>{{ sale()!.saleNumber }}</h1>
+          <h1>{{ sale()!.number }}</h1>
           <p class="subtitle">Sale</p>
         </div>
         <app-badge [variant]="getStatusVariant()">{{ sale()!.status }}</app-badge>
@@ -24,14 +28,14 @@ import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
 
       <app-card title="Sale Information">
         <div class="info-grid">
-          <div class="info-item"><label>Branch ID:</label><span>{{ sale()!.branchId }}</span></div>
+          <div class="info-item"><label>Branch:</label><span>{{ sale()!.branchCode }}</span></div>
           <div class="info-item"><label>Date:</label><span>{{ sale()!.saleDateUtc | easternTime:'withZone' }}</span></div>
           <div class="info-item">
             <label>Payment Method:</label>
             <span *ngIf="!sale()!.paymentDetails || sale()!.paymentDetails!.length === 0">{{ formatPaymentMethod(sale()!.paymentMethod) }}</span>
             <div *ngIf="sale()!.paymentDetails && sale()!.paymentDetails!.length > 0">
               <div *ngFor="let pd of sale()!.paymentDetails">
-                {{ formatPaymentMethod(pd.method) }}: {{ pd.amount | number:'1.2-2' }}
+                {{ formatPaymentMethod(pd.method) }}: {{ pd.amount | number:'1.2-2' | sensitive }}
                 <span *ngIf="pd.checkNumber"> (Check #{{ pd.checkNumber }})</span>
               </div>
             </div>
@@ -40,9 +44,18 @@ import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
           <div class="info-item" *ngIf="sale()!.customerPhone"><label>Phone:</label><span>{{ sale()!.customerPhone }}</span></div>
           <div class="info-item"><label>Created By:</label><span>{{ sale()!.createdBy }}</span></div>
           <div class="info-item"><label>Created At:</label><span>{{ sale()!.createdAtUtc | easternTime:'withZone' }}</span></div>
-          <div class="info-item" *ngIf="sale()!.postedBy"><label>Posted By:</label><span>{{ sale()!.postedBy }}</span></div>
-          <div class="info-item" *ngIf="sale()!.postedAtUtc"><label>Posted At:</label><span>{{ sale()!.postedAtUtc | easternTime:'withZone' }}</span></div>
           <div class="info-item full-width" *ngIf="sale()!.notes"><label>Notes:</label><span>{{ sale()!.notes }}</span></div>
+        </div>
+      </app-card>
+
+      <app-card title="Status History" *ngIf="sale()!.statusHistory?.length">
+        <div class="status-history">
+          <div *ngFor="let entry of sale()!.statusHistory" class="status-entry">
+            <app-badge [variant]="getStatusVariant(entry.status)">{{ entry.status }}</app-badge>
+            <span class="status-user">{{ entry.user.firstName }} {{ entry.user.lastName }}</span>
+            <span class="status-date">{{ entry.date | easternTime:'withZone' }}</span>
+            <span *ngIf="entry.comment" class="status-comment">{{ entry.comment }}</span>
+          </div>
         </div>
       </app-card>
 
@@ -58,7 +71,6 @@ import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
               <th>Unit Price</th>
               <th>Currency</th>
               <th>Line Total</th>
-              <th>Inventory Link</th>
             </tr>
           </thead>
           <tbody>
@@ -72,15 +84,9 @@ import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
               </td>
               <td>{{ line.condition || '-' }}</td>
               <td>{{ line.quantity }}</td>
-              <td>{{ line.unitPrice | number: '1.2-2' }}</td>
+              <td>{{ line.unitPrice | number: '1.2-2' | sensitive }}</td>
               <td>{{ line.currency }}</td>
-              <td><strong>{{ line.lineTotal | number: '1.2-2' }}</strong></td>
-              <td>
-                <a *ngIf="line.inventoryTransactionId" [routerLink]="['/transactions', line.inventoryTransactionId]" class="link">
-                  View Transaction
-                </a>
-                <span *ngIf="!line.inventoryTransactionId" class="no-link">-</span>
-              </td>
+              <td><strong>{{ line.lineTotal | number: '1.2-2' | sensitive }}</strong></td>
             </tr>
           </tbody>
         </table>
@@ -111,6 +117,11 @@ import { EasternTimePipe } from '../../../shared/pipes/eastern-time.pipe';
     .classification-badge.service { background-color: #fef3c7; color: #92400e; }
     .link { color: $color-primary-600; text-decoration: none; &:hover { text-decoration: underline; } }
     .no-link { color: $color-gray-400; }
+    .status-history { display: flex; flex-direction: column; gap: $spacing-3; }
+    .status-entry { display: flex; align-items: center; gap: $spacing-3; font-size: $font-size-sm; }
+    .status-user { color: $color-gray-700; font-weight: $font-weight-medium; }
+    .status-date { color: $color-gray-500; }
+    .status-comment { color: $color-gray-600; font-style: italic; }
     .actions { display: flex; justify-content: flex-end; gap: $spacing-3; margin-top: $spacing-6; }
   `]
 })
@@ -119,19 +130,31 @@ export class SaleDetailsComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   sale = signal<Sale | null>(null);
+  isNewMode = false;
 
   ngOnInit(): void {
-    const id = this.route.snapshot.params['id'];
-    this.salesService.getSaleById(id).subscribe({
-      next: (sale) => this.sale.set(sale),
-      error: (err) => console.error('Failed to load sale:', err)
+    this.route.queryParams.subscribe(params => {
+      if (params['new'] !== undefined) {
+        this.isNewMode = true;
+        this.sale.set(null);
+        return;
+      }
+
+      this.isNewMode = false;
+      const id = params['id'];
+      if (id) {
+        this.salesService.getSaleById(id).subscribe({
+          next: (sale) => this.sale.set(sale),
+          error: (err) => console.error('Failed to load sale:', err)
+        });
+      }
     });
   }
 
-  getStatusVariant(): any {
-    const status = this.sale()?.status;
-    if (status === 'Committed') return 'success';
-    if (status === 'Cancelled') return 'danger';
+  getStatusVariant(status?: string): any {
+    const s = status ?? this.sale()?.status;
+    if (s === 'Committed') return 'success';
+    if (s === 'Cancelled') return 'danger';
     return 'warning';
   }
 
@@ -143,9 +166,9 @@ export class SaleDetailsComponent implements OnInit {
     const mapping: { [key: string]: string } = {
       'Cash': 'Cash',
       'Card': 'Card',
-      'AcimaShortTermCredit': 'Acima Short-Term Credit',
-      'AccountsReceivable': 'Accounts Receivable',
-      'Check': 'Check'
+      'Check': 'Check',
+      'Transfer': 'Transfer',
+      'Mixed': 'Mixed'
     };
     return mapping[paymentMethod] || paymentMethod;
   }

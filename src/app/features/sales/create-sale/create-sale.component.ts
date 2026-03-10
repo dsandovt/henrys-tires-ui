@@ -16,7 +16,9 @@ import { SelectComponent, SelectOption } from '../../../shared/components/select
 import { AlertComponent } from '../../../shared/components/alert/alert.component';
 import { ConfirmationModalComponent, ConfirmationData, ConfirmationItem } from '../../../shared/components/confirmation-modal/confirmation-modal.component';
 import { PaymentMethodSelectorComponent } from '../../../shared/components/payment-method-selector/payment-method-selector.component';
-import { convertEasternToUtc } from '../../../core/utils/timezone.utils';
+import { MixedPaymentModalComponent } from '../../../shared/components/mixed-payment-modal/mixed-payment-modal.component';
+import { localToUtcIso } from '../../../core/utils/timezone.utils';
+import { SensitivePipe } from '../../../shared/pipes/sensitive.pipe';
 
 interface SaleLineForm extends CreateSaleLineRequest {
   availableStock?: number;
@@ -34,7 +36,9 @@ interface SaleLineForm extends CreateSaleLineRequest {
     SelectComponent,
     AlertComponent,
     ConfirmationModalComponent,
-    PaymentMethodSelectorComponent
+    PaymentMethodSelectorComponent,
+    MixedPaymentModalComponent,
+    SensitivePipe
   ],
   templateUrl: './create-sale.component.html',
   styleUrls: ['./create-sale.component.scss']
@@ -49,7 +53,7 @@ export class CreateSaleComponent implements OnInit {
   authService = inject(AuthService);
 
   branchCode = '';
-  saleDate = new Date().toISOString().slice(0, 16);
+  saleDate = '';
   customerName = '';
   customerPhone = '';
   notes = '';
@@ -63,6 +67,8 @@ export class CreateSaleComponent implements OnInit {
 
   // Confirmation modal state
   @ViewChild(ConfirmationModalComponent) confirmationModal?: ConfirmationModalComponent;
+  @ViewChild(MixedPaymentModalComponent) mixedPaymentModal?: MixedPaymentModalComponent;
+  @ViewChild(PaymentMethodSelectorComponent) paymentMethodSelector?: PaymentMethodSelectorComponent;
   isModalOpen = signal(false);
   confirmationData = signal<ConfirmationData | null>(null);
 
@@ -106,7 +112,7 @@ export class CreateSaleComponent implements OnInit {
     this.lines.update(lines => [
       ...lines,
       {
-        itemId: '',
+        itemReference: '',
         itemCode: '',
         description: '',
         classification: 'Good',
@@ -125,7 +131,7 @@ export class CreateSaleComponent implements OnInit {
 
   onItemSelected(index: number): void {
     const line = this.lines()[index];
-    const item = this.items().find(i => i.id === line.itemId);
+    const item = this.items().find(i => i.id === line.itemReference);
 
     if (item) {
       this.lines.update(lines => {
@@ -171,7 +177,7 @@ export class CreateSaleComponent implements OnInit {
       line.itemCode.trim().toUpperCase()
     ).subscribe({
       next: (summary) => {
-        const entry = summary.entries.find(e => e.itemCondition === line.condition);
+        const entry = summary.entries.find(e => e.condition === line.condition);
         const available = entry ? (entry.onHand - entry.reserved) : 0;
 
         this.lines.update(lines => {
@@ -192,6 +198,7 @@ export class CreateSaleComponent implements OnInit {
 
   getStockError(line: SaleLineForm): string {
     if (line.classification !== 'Good') return '';
+    if (line.condition === ItemCondition.New && line.allowWithoutStock) return '';
     if (line.availableStock === undefined) return '';
     if (line.quantity > line.availableStock) {
       return `Insufficient stock (available: ${line.availableStock})`;
@@ -204,7 +211,7 @@ export class CreateSaleComponent implements OnInit {
 
     return this.lines().every(line => {
       const hasValidFields =
-        line.itemId.trim() !== '' &&
+        line.itemReference.trim() !== '' &&
         line.quantity > 0 &&
         line.unitPrice >= 0;
 
@@ -214,6 +221,7 @@ export class CreateSaleComponent implements OnInit {
 
       const hasValidStock =
         line.classification === 'Service' ||
+        (line.condition === ItemCondition.New && line.allowWithoutStock) ||
         line.availableStock === undefined ||
         line.quantity <= line.availableStock;
 
@@ -268,24 +276,25 @@ export class CreateSaleComponent implements OnInit {
   private executeSubmit(): void {
     const request = {
       branchCode: this.branchCode || undefined,
-      saleDateUtc: convertEasternToUtc(this.saleDate),
+      saleDateUtc: this.saleDate ? localToUtcIso(this.saleDate) : undefined,
       lines: this.lines().map(line => ({
-        itemId: line.itemId,
+        itemReference: line.itemReference,
         itemCode: line.itemCode,
         description: line.description,
         classification: line.classification,
         condition: line.condition,
         quantity: line.quantity,
         unitPrice: line.unitPrice,
-        currency: line.currency
+        currency: line.currency,
+        allowWithoutStock: line.allowWithoutStock || false
       })),
       customerName: this.customerName || undefined,
       customerPhone: this.customerPhone || undefined,
       notes: this.notes || undefined,
-      paymentMethod: this.paymentDetails().length > 0 ? this.paymentDetails()[0].method : this.paymentMethod,
+      paymentMethod: this.paymentDetails().length >= 2 ? PaymentMethod.Mixed : (this.paymentDetails()[0]?.method || this.paymentMethod),
       paymentDetails: this.paymentDetails().map(pd => ({
         method: pd.method,
-        amount: pd.amount,
+        amount: pd.amount || this.getSaleTotal(),
         checkNumber: pd.checkNumber
       }))
     };
@@ -298,7 +307,7 @@ export class CreateSaleComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to create sale:', err);
-        const errorMessage = err.error?.message || 'Failed to create sale. Please try again.';
+        const errorMessage = err.error?.errorMessage || err.error?.message || 'Failed to create sale. Please try again.';
         this.confirmationModal?.setError(errorMessage);
       }
     });
@@ -307,8 +316,7 @@ export class CreateSaleComponent implements OnInit {
   private getPaymentMethodLabel(method: PaymentMethod): string {
     const labels: Record<string, string> = {
       Cash: 'Cash', Card: 'Card', Check: 'Check',
-      AcimaShortTermCredit: 'Acima Short-Term Credit',
-      AccountsReceivable: 'Accounts Receivable'
+      Transfer: 'Transfer', Mixed: 'Mixed'
     };
     return labels[method] || method.toString();
   }
@@ -317,18 +325,39 @@ export class CreateSaleComponent implements OnInit {
     this.salesService.postSale(saleId).subscribe({
       next: () => {
         this.toastService.success('Sale posted successfully');
-        this.router.navigate(['/sales', saleId]);
+        this.router.navigate(['/sale-details'], { queryParams: { id: saleId } });
       },
       error: (err) => {
         console.error('Failed to post sale:', err);
-        this.toastService.warning('Sale created but failed to post. View in sales list.');
-        this.router.navigate(['/sales']);
+        const errorMessage = err.error?.errorMessage || err.error?.message || 'Sale created but failed to post.';
+        this.toastService.warning(errorMessage);
+        this.router.navigate(['/sale-details'], { queryParams: { id: saleId } });
       }
     });
   }
 
   onPaymentDetailsChange(details: PaymentDetail[]): void {
     this.paymentDetails.set(details);
+  }
+
+  onMixedEditRequested(existingDetails: PaymentDetail[]): void {
+    this.mixedPaymentModal?.open(existingDetails.length >= 2 ? existingDetails : undefined);
+  }
+
+  onMixedPaymentConfirmed(details: PaymentDetail[]): void {
+    this.paymentDetails.set(details);
+    this.paymentMethodSelector?.setMixedDetails(details);
+  }
+
+  onMixedPaymentCancelled(): void {
+    // If no mixed details were set, revert to Cash
+    if (this.paymentDetails().length < 2) {
+      this.paymentDetails.set([{ method: PaymentMethod.Cash, amount: 0 }]);
+    }
+  }
+
+  getSaleTotal(): number {
+    return this.lines().reduce((sum, line) => sum + this.calculateLineTotal(line), 0);
   }
 
   onCancel(): void {

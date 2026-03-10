@@ -44,7 +44,7 @@ export interface BranchBreakdown {
 
 export interface RecentActivityItem {
   id: string;
-  transactionNumber: string;
+  number: string;
   type: 'Sale' | 'Purchase';
   status: 'Draft' | 'Committed' | 'Cancelled';
   amount: number;

@@ -1,11 +1,12 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RecentActivityItem } from '../../models/dashboard.models';
+import { SensitivePipe } from '../../../../shared/pipes/sensitive.pipe';
 
 @Component({
   selector: 'app-recent-activity-list',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, SensitivePipe],
   template: `
     <div class="activity-list">
       <div *ngIf="loading" class="loading-state">
@@ -39,14 +40,14 @@ import { RecentActivityItem } from '../../models/dashboard.models';
               <div class="activity-title">
                 <span class="activity-type">{{ activity.type }}</span>
                 <span class="activity-separator">•</span>
-                <span class="activity-code">{{ activity.transactionNumber }}</span>
+                <span class="activity-code">{{ activity.number }}</span>
                 <span class="activity-status" [class.status--committed]="activity.status === 'Committed'" [class.status--draft]="activity.status === 'Draft'" [class.status--cancelled]="activity.status === 'Cancelled'">
                   {{ activity.status }}
                 </span>
               </div>
               <div class="activity-amount" [class.amount--sale]="activity.type === 'Sale'" [class.amount--purchase]="activity.type === 'Purchase'">
                 <span class="amount-currency">{{ activity.currency }}</span>
-                <span class="amount-value">{{ formatNumber(activity.amount) }}</span>
+                <span class="amount-value">{{ formatNumber(activity.amount) | sensitive }}</span>
               </div>
             </div>
             <div class="activity-meta">

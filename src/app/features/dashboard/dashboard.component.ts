@@ -325,9 +325,9 @@ export class DashboardComponent implements OnInit {
 
   onActivityClick(activity: RecentActivityItem): void {
     if (activity.type === 'Sale') {
-      this.router.navigate(['/sales', activity.id]);
+      this.router.navigate(['/sale-details'], { queryParams: { id: activity.id } });
     } else {
-      this.router.navigate(['/transactions', activity.id]);
+      this.router.navigate(['/transaction-details'], { queryParams: { id: activity.id } });
     }
   }
 }

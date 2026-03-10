@@ -6,10 +6,8 @@ import {
   LucideIconProvider,
   LUCIDE_ICONS,
   Package,
-  ShoppingCart,
   Banknote,
   ArrowDown,
-  ArrowUp,
   ClipboardList,
   BarChart3,
   Tag,
@@ -17,16 +15,18 @@ import {
   Users,
   LogOut,
   FileText,
-  Activity
+  Activity,
+  Shield,
+  Layers
 } from 'lucide-angular';
 import { AuthService } from '../../../core/auth/auth.service';
-import { Role } from '../../../core/models/auth.models';
 
 interface NavItem {
   label: string;
   path: string;
   icon: string;
-  roles?: Role[];
+  roleCodes?: string[];
+  queryParams?: Record<string, any>;
 }
 
 @Component({
@@ -37,7 +37,7 @@ interface NavItem {
     {
       provide: LUCIDE_ICONS,
       multi: true,
-      useValue: new LucideIconProvider({ Package, ShoppingCart, Banknote, ArrowDown, ArrowUp, ClipboardList, BarChart3, Tag, DollarSign, Users, LogOut, FileText, Activity })
+      useValue: new LucideIconProvider({ Package, Banknote, ArrowDown, ClipboardList, BarChart3, Tag, DollarSign, Users, LogOut, FileText, Activity, Shield, Layers })
     }
   ],
   template: `
@@ -50,8 +50,8 @@ interface NavItem {
       <div class="nav-user">
         <div class="user-avatar">{{ userInitials() }}</div>
         <div class="user-info">
-          <p class="user-name">{{ authService.currentUser()?.username }}</p>
-          <p class="user-role">{{ authService.currentUser()?.role }}</p>
+          <p class="user-name">{{ displayName() }}</p>
+          <p class="user-role">{{ primaryRole() }}</p>
         </div>
       </div>
 
@@ -59,6 +59,7 @@ interface NavItem {
         <li *ngFor="let item of visibleNavItems()" class="nav-item">
           <a
             [routerLink]="item.path"
+            [queryParams]="item.queryParams"
             routerLinkActive="active"
             class="nav-link"
           >
@@ -82,37 +83,56 @@ export class NavigationComponent {
   authService = inject(AuthService);
 
   private readonly navItems: NavItem[] = [
-    // Seller, StoreSeller & All Roles
-    { label: 'Stock', path: '/stock', icon: 'package', roles: [Role.Seller, Role.Supervisor, Role.Admin, Role.StoreSeller, Role.StockViewer] },
-    { label: 'New Sale', path: '/sales/new', icon: 'shopping-cart', roles: [Role.Seller, Role.Supervisor, Role.Admin, Role.StoreSeller] },
-    { label: 'Sales', path: '/sales', icon: 'banknote', roles: [Role.Seller, Role.Supervisor, Role.Admin, Role.StoreSeller] },
-    { label: 'New Transaction IN', path: '/transactions/in/new', icon: 'arrow-down', roles: [Role.Seller, Role.Supervisor, Role.Admin] },
-    { label: 'New Transaction OUT', path: '/transactions/out/new', icon: 'arrow-up', roles: [Role.Seller, Role.Supervisor, Role.Admin] },
-    { label: 'Transactions', path: '/transactions', icon: 'clipboard-list', roles: [Role.Seller, Role.Supervisor, Role.Admin] },
+    // All authenticated users
+    { label: 'Stock', path: '/stock', icon: 'package' },
+    { label: 'Sales', path: '/sales', icon: 'banknote', roleCodes: ['SELLER', 'SUPERVISOR', 'ADMIN', 'STORE_SELLER'] },
+    { label: 'Purchase Orders', path: '/purchase-orders', icon: 'arrow-down', roleCodes: ['SELLER', 'SUPERVISOR', 'ADMIN'] },
+    { label: 'Transactions', path: '/transactions', icon: 'clipboard-list', roleCodes: ['SELLER', 'SUPERVISOR', 'ADMIN'] },
 
     // Reports (Admin Only)
-    { label: 'Stock Report', path: '/reports/stock', icon: 'file-text', roles: [Role.Admin] },
-    { label: 'Inventory Movements', path: '/reports/inventory-movements', icon: 'activity', roles: [Role.Admin] },
+    { label: 'Stock Report', path: '/reports/stock', icon: 'file-text', roleCodes: ['ADMIN'] },
+    { label: 'Sales Report', path: '/reports/sales', icon: 'file-text', roleCodes: ['ADMIN'] },
+    { label: 'Inventory Movements', path: '/reports/inventory-movements', icon: 'activity', roleCodes: ['ADMIN'] },
+    { label: 'Daily Close', path: '/reports/daily-close', icon: 'file-text', roleCodes: ['ADMIN'] },
+    { label: 'Kardex', path: '/reports/kardex', icon: 'file-text', roleCodes: ['ADMIN'] },
+    { label: 'Sales by Volume', path: '/reports/sales-by-volume', icon: 'file-text', roleCodes: ['ADMIN'] },
 
     // Admin Only
-    { label: 'Dashboard', path: '/dashboard', icon: 'bar-chart-3', roles: [Role.Admin] },
-    { label: 'Items', path: '/admin/items', icon: 'tag', roles: [Role.Admin] },
-    { label: 'Prices', path: '/admin/prices', icon: 'dollar-sign', roles: [Role.Admin] },
-    { label: 'Users', path: '/admin/users', icon: 'users', roles: [Role.Admin] }
+    { label: 'Dashboard', path: '/dashboard', icon: 'bar-chart-3', roleCodes: ['ADMIN'] },
+    { label: 'Items', path: '/admin/items', icon: 'tag', roleCodes: ['ADMIN'] },
+    { label: 'Prices', path: '/admin/prices', icon: 'dollar-sign', roleCodes: ['ADMIN'] },
+    { label: 'Users', path: '/admin/users', icon: 'users', roleCodes: ['ADMIN'] },
+    { label: 'Roles', path: '/admin/roles', icon: 'shield', roleCodes: ['ADMIN'] },
+    { label: 'Groups', path: '/admin/groups', icon: 'layers', roleCodes: ['ADMIN'] },
   ];
 
   visibleNavItems = computed(() => {
-    const userRole = this.authService.userRole();
-    if (!userRole) return [];
+    const userRoles = this.authService.roleCodes();
+    if (!userRoles || userRoles.length === 0) return [];
 
     return this.navItems.filter(item =>
-      !item.roles || item.roles.includes(userRole)
+      !item.roleCodes || item.roleCodes.some(code => userRoles.includes(code))
     );
   });
 
+  displayName = computed(() => {
+    const user = this.authService.currentUser();
+    if (!user) return '';
+    return `${user.firstName} ${user.lastName}`;
+  });
+
   userInitials = computed(() => {
-    const username = this.authService.currentUser()?.username || '';
-    return username.substring(0, 2).toUpperCase();
+    const user = this.authService.currentUser();
+    if (!user) return '';
+    const first = user.firstName?.charAt(0) || '';
+    const last = user.lastName?.charAt(0) || '';
+    return (first + last).toUpperCase() || user.username.substring(0, 2).toUpperCase();
+  });
+
+  primaryRole = computed(() => {
+    const roles = this.authService.roleCodes();
+    if (!roles || roles.length === 0) return '';
+    return roles[0];
   });
 
   onLogout(): void {

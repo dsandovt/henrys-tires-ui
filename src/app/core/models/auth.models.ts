@@ -2,14 +2,6 @@
 // Authentication Models
 // ============================================================================
 
-export enum Role {
-  Seller = 'Seller',
-  Supervisor = 'Supervisor',
-  Admin = 'Admin',
-  StoreSeller = 'StoreSeller',
-  StockViewer = 'StockViewer'
-}
-
 export interface LoginRequest {
   username: string;
   password: string;
@@ -18,25 +10,38 @@ export interface LoginRequest {
 export interface LoginResponse {
   token: string;
   username: string;
-  role: string;
-  branchId?: string;
+  groupReferences: string[];
+  roleCodes: string[];
+  branchReferences: string[];
 }
 
 export interface CurrentUser {
   username: string;
-  role: Role;
-  branchId?: string;
-  branchCode?: string;
-  branchName?: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  secondLastName?: string;
+  email?: string;
+  roleCodes: string[];
+  groupReferences: string[];
+  branchReferences: string[];
+  branchCodes: string[];
+  branchNames: string[];
   token: string;
 }
 
 export interface DecodedToken {
   nameid: string; // username
-  role: string;
-  branchId?: string;
-  branchCode?: string;
-  branchName?: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  secondLastName?: string;
+  email?: string;
+  roleCodes: string | string[];
+  groupReference: string | string[];
+  branchReference: string | string[];
+  branchCode: string | string[];
+  branchName: string | string[];
   exp: number;
   iat: number;
 }

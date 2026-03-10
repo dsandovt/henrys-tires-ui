@@ -68,7 +68,7 @@ import { LucideAngularModule, Download, LucideIconProvider, LUCIDE_ICONS } from 
                   <td>{{ row.description }}</td>
                   <td>
                     <span class="condition-badge" [class.new]="row.condition === 'New'" [class.used]="row.condition === 'Used'">
-                      {{ row.condition }}
+                      {{ row.condition || 'Unknown' }}
                     </span>
                   </td>
                   <td class="number">{{ row.onHand }}</td>

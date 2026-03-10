@@ -14,14 +14,16 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   // Get token from auth service
   const token = authService.getStoredToken();
 
-  // Clone request and add Authorization header if token exists
+  // Clone request and add headers
+  const headers: Record<string, string> = {
+    'X-Timezone-Offset': '-300'
+  };
+
   if (token) {
-    req = req.clone({
-      setHeaders: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    headers['Authorization'] = `Bearer ${token}`;
   }
+
+  req = req.clone({ setHeaders: headers });
 
   // Handle response
   return next(req).pipe(

@@ -21,13 +21,14 @@
             (selectionChange)="onBranchChanged()"
           ></app-select>
 
-          <app-input
-            [(ngModel)]="saleDate"
-            name="saleDate"
-            label="Sale Date"
-            type="datetime-local"
-            [required]="true"
-          ></app-input>
+          @if (authService.isAdmin()) {
+            <app-input
+              [(ngModel)]="saleDate"
+              name="saleDate"
+              label="Sale Date"
+              type="datetime-local"
+            ></app-input>
+          }
         </div>
 
         <div class="form-row">
@@ -56,6 +57,7 @@
         <app-payment-method-selector
           [paymentDetails]="paymentDetails()"
           (paymentDetailsChange)="onPaymentDetailsChange($event)"
+          (mixedEditRequested)="onMixedEditRequested($event)"
         ></app-payment-method-selector>
       </div>
 
@@ -95,7 +97,7 @@
           <div class="line-fields">
             <div class="form-row">
               <app-select
-                [(ngModel)]="line.itemId"
+                [(ngModel)]="line.itemReference"
                 [name]="'itemId_' + i"
                 label="Item"
                 placeholder="Search by code or description"
@@ -131,6 +133,17 @@
               ></app-input>
             </div>
 
+            <div class="form-row" *ngIf="line.classification === 'Good' && line.condition === 'New'">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  [(ngModel)]="line.allowWithoutStock"
+                  [name]="'allowWithoutStock_' + i"
+                />
+                Allow sale without stock (new tires)
+              </label>
+            </div>
+
             <div class="form-row">
               <app-input
                 [(ngModel)]="line.unitPrice"
@@ -150,7 +163,7 @@
 
               <div class="form-group">
                 <label>Line Total</label>
-                <div class="line-total">{{ calculateLineTotal(line) | number: '1.2-2' }} {{ line.currency }}</div>
+                <div class="line-total">{{ calculateLineTotal(line) | number: '1.2-2' | sensitive }} {{ line.currency }}</div>
               </div>
             </div>
 
@@ -180,6 +193,14 @@
       </div>
     </form>
   </app-card>
+
+  <!-- Mixed Payment Modal -->
+  <app-mixed-payment-modal
+    [saleTotal]="getSaleTotal()"
+    [currency]="lines()[0]?.currency || 'USD'"
+    (confirmed)="onMixedPaymentConfirmed($event)"
+    (cancelled)="onMixedPaymentCancelled()"
+  ></app-mixed-payment-modal>
 
   <!-- Confirmation Modal -->
   <app-confirmation-modal
