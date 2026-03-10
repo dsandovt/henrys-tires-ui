@@ -167,13 +167,20 @@ export class CreateSaleComponent implements OnInit {
       return;
     }
 
-    const branchCode = this.branchCode || this.authService.branchCode();
-    if (!branchCode) {
+    // Resolve branchReference (ObjectId) from selected branchCode or auth token
+    let branchRef: string | undefined;
+    if (this.branchCode) {
+      const branch = this.branches().find(b => b.code === this.branchCode);
+      branchRef = branch?.id;
+    } else {
+      branchRef = this.authService.branchReference();
+    }
+    if (!branchRef) {
       return;
     }
 
     this.inventoryService.getInventorySummaryByBranchAndItem(
-      branchCode,
+      branchRef,
       line.itemCode.trim().toUpperCase()
     ).subscribe({
       next: (summary) => {
