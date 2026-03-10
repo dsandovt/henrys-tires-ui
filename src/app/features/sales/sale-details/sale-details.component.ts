@@ -168,7 +168,7 @@ export class SaleDetailsComponent implements OnInit {
       'Card': 'Card',
       'Check': 'Check',
       'Transfer': 'Transfer',
-      'Mixed': 'Mixed'
+      'Split': 'Split Payment'
     };
     return mapping[paymentMethod] || paymentMethod;
   }

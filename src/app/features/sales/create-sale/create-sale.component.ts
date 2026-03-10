@@ -16,7 +16,6 @@ import { SelectComponent, SelectOption } from '../../../shared/components/select
 import { AlertComponent } from '../../../shared/components/alert/alert.component';
 import { ConfirmationModalComponent, ConfirmationData, ConfirmationItem } from '../../../shared/components/confirmation-modal/confirmation-modal.component';
 import { PaymentMethodSelectorComponent } from '../../../shared/components/payment-method-selector/payment-method-selector.component';
-import { MixedPaymentModalComponent } from '../../../shared/components/mixed-payment-modal/mixed-payment-modal.component';
 import { localToUtcIso } from '../../../core/utils/timezone.utils';
 import { SensitivePipe } from '../../../shared/pipes/sensitive.pipe';
 
@@ -37,7 +36,6 @@ interface SaleLineForm extends CreateSaleLineRequest {
     AlertComponent,
     ConfirmationModalComponent,
     PaymentMethodSelectorComponent,
-    MixedPaymentModalComponent,
     SensitivePipe
   ],
   templateUrl: './create-sale.component.html',
@@ -57,8 +55,8 @@ export class CreateSaleComponent implements OnInit {
   customerName = '';
   customerPhone = '';
   notes = '';
-  paymentMethod: PaymentMethod = PaymentMethod.Cash;
   paymentDetails = signal<PaymentDetail[]>([{ method: PaymentMethod.Cash, amount: 0 }]);
+  paymentValid = signal(true);
   lines = signal<SaleLineForm[]>([]);
   loading = signal(false);
 
@@ -67,10 +65,10 @@ export class CreateSaleComponent implements OnInit {
 
   // Confirmation modal state
   @ViewChild(ConfirmationModalComponent) confirmationModal?: ConfirmationModalComponent;
-  @ViewChild(MixedPaymentModalComponent) mixedPaymentModal?: MixedPaymentModalComponent;
-  @ViewChild(PaymentMethodSelectorComponent) paymentMethodSelector?: PaymentMethodSelectorComponent;
   isModalOpen = signal(false);
   confirmationData = signal<ConfirmationData | null>(null);
+
+  readonly saleTotal = signal(0);
 
   branchOptions = computed<SelectOption[]>(() =>
     this.branches().map(branch => ({
@@ -123,10 +121,12 @@ export class CreateSaleComponent implements OnInit {
         availableStock: undefined
       }
     ]);
+    this.recalcTotal();
   }
 
   removeLine(index: number): void {
     this.lines.update(lines => lines.filter((_, i) => i !== index));
+    this.recalcTotal();
   }
 
   onItemSelected(index: number): void {
@@ -209,7 +209,7 @@ export class CreateSaleComponent implements OnInit {
   isFormValid(): boolean {
     if (this.lines().length === 0) return false;
 
-    return this.lines().every(line => {
+    const linesValid = this.lines().every(line => {
       const hasValidFields =
         line.itemReference.trim() !== '' &&
         line.quantity > 0 &&
@@ -227,6 +227,8 @@ export class CreateSaleComponent implements OnInit {
 
       return hasValidFields && hasValidCondition && hasValidStock;
     });
+
+    return linesValid && this.paymentValid();
   }
 
   onSubmit(): void {
@@ -248,7 +250,9 @@ export class CreateSaleComponent implements OnInit {
       condition: line.condition !== undefined ? (line.condition === ItemCondition.New ? 'New' : 'Used') : undefined
     }));
 
-    const totalAmount = this.lines().reduce((sum, line) => sum + this.calculateLineTotal(line), 0);
+    const total = this.saleTotal();
+    const details = this.paymentDetails();
+    const isSplit = details.length >= 2;
 
     this.confirmationData.set({
       type: 'Sale',
@@ -256,9 +260,11 @@ export class CreateSaleComponent implements OnInit {
       items: confirmationItems,
       totalItems: this.lines().length,
       totalQuantity: this.lines().reduce((sum, line) => sum + line.quantity, 0),
-      totalAmount: totalAmount,
+      totalAmount: total,
       currency: this.lines()[0]?.currency.toString() || 'USD',
-      paymentMethod: this.getPaymentMethodLabel(this.paymentMethod),
+      paymentMethod: isSplit
+        ? details.map(d => `${d.method} ($${d.amount.toFixed(2)})`).join(', ')
+        : this.getPaymentMethodLabel(details[0]?.method || PaymentMethod.Cash),
       notes: this.notes || undefined
     });
 
@@ -274,6 +280,10 @@ export class CreateSaleComponent implements OnInit {
   }
 
   private executeSubmit(): void {
+    const details = this.paymentDetails();
+    const total = this.saleTotal();
+    const isSplit = details.length >= 2;
+
     const request = {
       branchCode: this.branchCode || undefined,
       saleDateUtc: this.saleDate ? localToUtcIso(this.saleDate) : undefined,
@@ -291,10 +301,10 @@ export class CreateSaleComponent implements OnInit {
       customerName: this.customerName || undefined,
       customerPhone: this.customerPhone || undefined,
       notes: this.notes || undefined,
-      paymentMethod: this.paymentDetails().length >= 2 ? PaymentMethod.Mixed : (this.paymentDetails()[0]?.method || this.paymentMethod),
-      paymentDetails: this.paymentDetails().map(pd => ({
+      paymentMethod: isSplit ? PaymentMethod.Split : (details[0]?.method || PaymentMethod.Cash),
+      paymentDetails: details.map(pd => ({
         method: pd.method,
-        amount: pd.amount || this.getSaleTotal(),
+        amount: isSplit ? pd.amount : total,
         checkNumber: pd.checkNumber
       }))
     };
@@ -316,7 +326,7 @@ export class CreateSaleComponent implements OnInit {
   private getPaymentMethodLabel(method: PaymentMethod): string {
     const labels: Record<string, string> = {
       Cash: 'Cash', Card: 'Card', Check: 'Check',
-      Transfer: 'Transfer', Mixed: 'Mixed'
+      Transfer: 'Transfer', Split: 'Split Payment'
     };
     return labels[method] || method.toString();
   }
@@ -340,24 +350,8 @@ export class CreateSaleComponent implements OnInit {
     this.paymentDetails.set(details);
   }
 
-  onMixedEditRequested(existingDetails: PaymentDetail[]): void {
-    this.mixedPaymentModal?.open(existingDetails.length >= 2 ? existingDetails : undefined);
-  }
-
-  onMixedPaymentConfirmed(details: PaymentDetail[]): void {
-    this.paymentDetails.set(details);
-    this.paymentMethodSelector?.setMixedDetails(details);
-  }
-
-  onMixedPaymentCancelled(): void {
-    // If no mixed details were set, revert to Cash
-    if (this.paymentDetails().length < 2) {
-      this.paymentDetails.set([{ method: PaymentMethod.Cash, amount: 0 }]);
-    }
-  }
-
-  getSaleTotal(): number {
-    return this.lines().reduce((sum, line) => sum + this.calculateLineTotal(line), 0);
+  onPaymentValidityChange(valid: boolean): void {
+    this.paymentValid.set(valid);
   }
 
   onCancel(): void {
@@ -366,5 +360,11 @@ export class CreateSaleComponent implements OnInit {
 
   calculateLineTotal(line: SaleLineForm): number {
     return line.quantity * line.unitPrice;
+  }
+
+  recalcTotal(): void {
+    this.saleTotal.set(
+      this.lines().reduce((sum, l) => sum + l.quantity * l.unitPrice, 0)
+    );
   }
 }

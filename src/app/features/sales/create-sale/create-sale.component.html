@@ -55,9 +55,9 @@
         ></app-input>
 
         <app-payment-method-selector
-          [paymentDetails]="paymentDetails()"
+          [saleTotal]="saleTotal()"
           (paymentDetailsChange)="onPaymentDetailsChange($event)"
-          (mixedEditRequested)="onMixedEditRequested($event)"
+          (validityChange)="onPaymentValidityChange($event)"
         ></app-payment-method-selector>
       </div>
 
@@ -130,6 +130,7 @@
                 [required]="true"
                 [error]="getStockError(line)"
                 [hint]="line.classification === 'Good' ? 'Available: ' + (line.availableStock ?? '...') : ''"
+                (ngModelChange)="recalcTotal()"
               ></app-input>
             </div>
 
@@ -152,6 +153,7 @@
                 type="number"
                 placeholder="0.00"
                 [required]="true"
+                (ngModelChange)="recalcTotal()"
               ></app-input>
 
               <app-input
@@ -193,14 +195,6 @@
       </div>
     </form>
   </app-card>
-
-  <!-- Mixed Payment Modal -->
-  <app-mixed-payment-modal
-    [saleTotal]="getSaleTotal()"
-    [currency]="lines()[0]?.currency || 'USD'"
-    (confirmed)="onMixedPaymentConfirmed($event)"
-    (cancelled)="onMixedPaymentCancelled()"
-  ></app-mixed-payment-modal>
 
   <!-- Confirmation Modal -->
   <app-confirmation-modal

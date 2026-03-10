@@ -85,7 +85,7 @@ export enum PaymentMethod {
   Card = 'Card',
   Check = 'Check',
   Transfer = 'Transfer',
-  Mixed = 'Mixed'
+  Split = 'Split'
 }
 
 export interface PaymentDetail {
