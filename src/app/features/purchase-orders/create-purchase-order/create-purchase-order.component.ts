@@ -94,11 +94,16 @@ import { localToUtcIso } from '../../../core/utils/timezone.utils';
             </div>
 
             <div class="form-group">
-              <app-select
-                label="Condition"
-                [options]="conditionOptions"
+              <label [for]="'condition_' + i" class="field-label">Condition</label>
+              <select
                 [(ngModel)]="line.condition"
-              ></app-select>
+                [name]="'condition_' + i"
+                [id]="'condition_' + i"
+                class="native-select"
+              >
+                <option value="New">New</option>
+                <option value="Used">Used</option>
+              </select>
             </div>
 
             <div class="form-group">
@@ -155,6 +160,18 @@ import { localToUtcIso } from '../../../core/utils/timezone.utils';
     .line-fields { display: grid; grid-template-columns: repeat(5, 1fr); gap: $spacing-3; }
     .add-line { margin-top: $spacing-3; }
     .actions { display: flex; justify-content: flex-end; gap: $spacing-3; margin-top: $spacing-6; }
+    .field-label { font-size: 0.875rem; font-weight: 500; color: #404040; margin-bottom: 0.375rem; }
+    .native-select {
+      width: 100%;
+      padding: 0.625rem 0.75rem;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      color: #404040;
+      background-color: #fff;
+      border: 1px solid #d4d4d4;
+      border-radius: 0.375rem;
+      &:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+    }
   `]
 })
 export class CreatePurchaseOrderComponent implements OnInit {
@@ -193,11 +210,6 @@ export class CreatePurchaseOrderComponent implements OnInit {
         subtitle: item.description
       }))
   );
-
-  conditionOptions: SelectOption[] = [
-    { value: ItemCondition.New, label: 'New' },
-    { value: ItemCondition.Used, label: 'Used' }
-  ];
 
   currencyOptions: SelectOption[] = [
     { value: Currency.USD, label: 'USD' },
