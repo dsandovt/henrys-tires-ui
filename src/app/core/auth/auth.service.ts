@@ -22,9 +22,11 @@ export class AuthService {
   readonly isAdmin = computed(() => this.hasRoleCode('ADMIN'));
   readonly isSupervisor = computed(() => this.hasRoleCode('SUPERVISOR'));
   readonly isSeller = computed(() => this.hasRoleCode('SELLER'));
+  readonly branchReferences = computed(() => this.currentUserSignal()?.branchReferences ?? []);
   readonly branchCodes = computed(() => this.currentUserSignal()?.branchCodes ?? []);
   readonly branchNames = computed(() => this.currentUserSignal()?.branchNames ?? []);
-  // For backward compatibility — return first branch code/name
+  // For backward compatibility — return first branch reference/code/name
+  readonly branchReference = computed(() => this.currentUserSignal()?.branchReferences?.[0]);
   readonly branchCode = computed(() => this.currentUserSignal()?.branchCodes?.[0]);
   readonly branchName = computed(() => this.currentUserSignal()?.branchNames?.[0]);
 

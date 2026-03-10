@@ -43,7 +43,7 @@ import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.
               class="branch-filter"
             >
               <option value="">All Stores</option>
-              <option *ngFor="let branch of branches()" [value]="branch.code">
+              <option *ngFor="let branch of branches()" [value]="branch.id">
                 {{ branch.name }}
               </option>
             </select>
@@ -210,20 +210,20 @@ export class StockListComponent implements OnInit, OnDestroy {
     this.loading.set(true);
 
     // Determine which branch to filter by:
-    // - Admins: Use selectedBranchCode (empty = all branches)
-    // - Non-admins: Use their assigned branch
-    let branchCode: string | undefined;
+    // - Admins: Use selectedBranchCode (now stores branch id/ObjectId)
+    // - Non-admins: Use their assigned branchReference from token
+    let branchRef: string | undefined;
     if (this.authService.isAdmin()) {
-      branchCode = this.selectedBranchCode || undefined;
+      branchRef = this.selectedBranchCode || undefined;
     } else {
-      branchCode = this.authService.branchCode() || undefined;
+      branchRef = this.authService.branchReference() || undefined;
     }
 
     this.inventoryService.getInventorySummaries({
       page: this.currentPage(),
       pageSize: this.pageSize(),
       search: this.searchQuery || undefined,
-      branchCode: branchCode
+      branchReference: branchRef
     }).subscribe({
       next: (response) => {
         console.log('Inventory loaded:', response);
