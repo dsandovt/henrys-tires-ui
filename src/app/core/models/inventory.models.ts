@@ -420,3 +420,76 @@ export interface PurchaseOrderListResponse {
   page: number;
   pageSize: number;
 }
+
+// ----------------------------------------------------------------------------
+// Inventory Adjustment Models
+// ----------------------------------------------------------------------------
+
+export enum AdjustmentType {
+  BranchTransfer = 'BranchTransfer',
+  StockCorrection = 'StockCorrection'
+}
+
+export enum CorrectionDirection {
+  Increase = 'Increase',
+  Decrease = 'Decrease'
+}
+
+export enum InventoryAdjustmentStatus {
+  Draft = 'Draft',
+  Committed = 'Committed',
+  Cancelled = 'Cancelled'
+}
+
+export interface InventoryAdjustment {
+  id: string;
+  number: string;
+  adjustmentType: string;
+  status: string;
+  statusHistory: StatusHistoryEntry[];
+  adjustmentDateUtc: string;
+  notes?: string;
+  originBranchReference?: string;
+  originBranchCode?: string;
+  destinationBranchReference?: string;
+  destinationBranchCode?: string;
+  branchReference?: string;
+  branchCode?: string;
+  direction?: string;
+  lines: InventoryAdjustmentLine[];
+  createdAtUtc: string;
+  createdBy: string;
+  modifiedAtUtc?: string;
+  modifiedBy?: string;
+}
+
+export interface InventoryAdjustmentLine {
+  lineId: string;
+  itemReference: string;
+  itemCode: string;
+  condition: string;
+  quantity: number;
+  notes?: string;
+}
+
+export interface CreateBranchTransferRequest {
+  originBranchCode: string;
+  destinationBranchCode: string;
+  notes?: string;
+  lines: CreateAdjustmentLineRequest[];
+}
+
+export interface CreateStockCorrectionRequest {
+  branchCode?: string;
+  direction: CorrectionDirection;
+  notes?: string;
+  lines: CreateAdjustmentLineRequest[];
+}
+
+export interface CreateAdjustmentLineRequest {
+  itemReference: string;
+  itemCode: string;
+  condition: ItemCondition;
+  quantity: number;
+  notes?: string;
+}

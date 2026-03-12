@@ -58,6 +58,20 @@ export const routes: Routes = [
           import('./features/purchase-orders/purchase-order-details/purchase-order-details.component').then(m => m.PurchaseOrderDetailsComponent)
       },
 
+      // Inventory Adjustments — flat routes with query params
+      {
+        path: 'inventory-adjustments',
+        canActivate: [roleGuard(['SELLER', 'SUPERVISOR', 'ADMIN'])],
+        loadComponent: () =>
+          import('./features/inventory-adjustments/adjustment-list/adjustment-list.component').then(m => m.AdjustmentListComponent)
+      },
+      {
+        path: 'adjustment-details',
+        canActivate: [roleGuard(['SELLER', 'SUPERVISOR', 'ADMIN'])],
+        loadComponent: () =>
+          import('./features/inventory-adjustments/adjustment-details/adjustment-details.component').then(m => m.AdjustmentDetailsComponent)
+      },
+
       // Sales — flat routes with query params: /sales (list), /sale-details?id=xxx or ?new=
       {
         path: 'sales',
