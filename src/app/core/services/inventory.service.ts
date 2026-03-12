@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { InventorySummary } from '../models/inventory.models';
 import { PaginatedResponse, PaginationParams } from '../models/api.models';
@@ -39,11 +39,13 @@ export class InventoryService {
     httpParams = httpParams.set('branchReference', branchReference);
     httpParams = httpParams.set('itemCode', itemCode);
 
+    const headers = new HttpHeaders().set('X-Skip-Error-Toast', 'true');
+
     return this.http
       .get<{
         success: boolean;
         data: InventorySummary;
-      }>(`${this.API_URL}-summary`, { params: httpParams })
+      }>(`${this.API_URL}-summary`, { params: httpParams, headers })
       .pipe(map((response) => response.data));
   }
 }

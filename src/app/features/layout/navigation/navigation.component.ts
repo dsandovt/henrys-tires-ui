@@ -17,7 +17,8 @@ import {
   FileText,
   Activity,
   Shield,
-  Layers
+  Layers,
+  ArrowLeftRight,
 } from 'lucide-angular';
 import { AuthService } from '../../../core/auth/auth.service';
 
@@ -37,8 +38,23 @@ interface NavItem {
     {
       provide: LUCIDE_ICONS,
       multi: true,
-      useValue: new LucideIconProvider({ Package, Banknote, ArrowDown, ClipboardList, BarChart3, Tag, DollarSign, Users, LogOut, FileText, Activity, Shield, Layers })
-    }
+      useValue: new LucideIconProvider({
+        Package,
+        Banknote,
+        ArrowDown,
+        ClipboardList,
+        BarChart3,
+        Tag,
+        DollarSign,
+        Users,
+        LogOut,
+        FileText,
+        Activity,
+        Shield,
+        Layers,
+        ArrowLeftRight,
+      }),
+    },
   ],
   template: `
     <nav class="navigation">
@@ -77,7 +93,7 @@ interface NavItem {
       </div>
     </nav>
   `,
-  styleUrls: ['./navigation.component.scss']
+  styleUrls: ['./navigation.component.scss'],
 })
 export class NavigationComponent {
   authService = inject(AuthService);
@@ -85,17 +101,68 @@ export class NavigationComponent {
   private readonly navItems: NavItem[] = [
     // All authenticated users
     { label: 'Stock', path: '/stock', icon: 'package' },
-    { label: 'Sales', path: '/sales', icon: 'banknote', roleCodes: ['SELLER', 'SUPERVISOR', 'ADMIN', 'STORE_SELLER'] },
-    { label: 'Purchase Orders', path: '/purchase-orders', icon: 'arrow-down', roleCodes: ['SELLER', 'SUPERVISOR', 'ADMIN'] },
-    { label: 'Transactions', path: '/transactions', icon: 'clipboard-list', roleCodes: ['SELLER', 'SUPERVISOR', 'ADMIN'] },
+    {
+      label: 'Sales',
+      path: '/sales',
+      icon: 'banknote',
+      roleCodes: ['SELLER', 'SUPERVISOR', 'ADMIN', 'STORE_SELLER'],
+    },
+    {
+      label: 'Purchase Orders',
+      path: '/purchase-orders',
+      icon: 'arrow-down',
+      roleCodes: ['SELLER', 'SUPERVISOR', 'ADMIN'],
+    },
+    {
+      label: 'Inventory Adjustments',
+      path: '/inventory-adjustments',
+      icon: 'arrow-left-right',
+      roleCodes: ['SUPERVISOR', 'ADMIN'],
+    },
+    {
+      label: 'Transactions',
+      path: '/transactions',
+      icon: 'clipboard-list',
+      roleCodes: ['SELLER', 'SUPERVISOR', 'ADMIN'],
+    },
 
     // Reports (Admin Only)
-    { label: 'Stock Report', path: '/reports/stock', icon: 'file-text', roleCodes: ['ADMIN'] },
-    { label: 'Sales Report', path: '/reports/sales', icon: 'file-text', roleCodes: ['ADMIN'] },
-    { label: 'Inventory Movements', path: '/reports/inventory-movements', icon: 'activity', roleCodes: ['ADMIN'] },
-    { label: 'Daily Close', path: '/reports/daily-close', icon: 'file-text', roleCodes: ['ADMIN'] },
-    { label: 'Kardex', path: '/reports/kardex', icon: 'file-text', roleCodes: ['ADMIN'] },
-    { label: 'Sales by Volume', path: '/reports/sales-by-volume', icon: 'file-text', roleCodes: ['ADMIN'] },
+    {
+      label: 'Stock Report',
+      path: '/reports/stock',
+      icon: 'file-text',
+      roleCodes: ['ADMIN', 'SUPERVISOR'],
+    },
+    {
+      label: 'Sales Report',
+      path: '/reports/sales',
+      icon: 'file-text',
+      roleCodes: ['ADMIN', 'SUPERVISOR'],
+    },
+    {
+      label: 'Inventory Movements',
+      path: '/reports/inventory-movements',
+      icon: 'activity',
+      roleCodes: ['ADMIN', 'SUPERVISOR'],
+    },
+    {
+      label: 'Daily Close',
+      path: '/reports/daily-close',
+      icon: 'file-text',
+      roleCodes: ['ADMIN', 'SUPERVISOR'],
+    },
+    {
+      label: 'Kardex',
+      path: '/reports/kardex',
+      icon: 'file-text',
+      roleCodes: ['ADMIN', 'SUPERVISOR'],
+    },
+    {
+      label: 'Sales by Volume',
+      path: '/reports/sales-by-volume',
+      icon: 'file-text',
+      roleCodes: ['ADMIN'],
+    },
 
     // Admin Only
     { label: 'Dashboard', path: '/dashboard', icon: 'bar-chart-3', roleCodes: ['ADMIN'] },
@@ -110,8 +177,8 @@ export class NavigationComponent {
     const userRoles = this.authService.roleCodes();
     if (!userRoles || userRoles.length === 0) return [];
 
-    return this.navItems.filter(item =>
-      !item.roleCodes || item.roleCodes.some(code => userRoles.includes(code))
+    return this.navItems.filter(
+      (item) => !item.roleCodes || item.roleCodes.some((code) => userRoles.includes(code)),
     );
   });
 

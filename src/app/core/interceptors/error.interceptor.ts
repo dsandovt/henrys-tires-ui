@@ -13,6 +13,11 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
+      // Allow callers to suppress the error toast via a custom header
+      if (req.headers.has('X-Skip-Error-Toast')) {
+        return throwError(() => error);
+      }
+
       const message = error.error?.errorMessage
         || error.error?.message
         || error.error?.title
